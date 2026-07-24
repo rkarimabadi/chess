@@ -21,7 +21,7 @@ __pycache__/
 .mimocode/
 .obsidian/
 .zcode/
-
+publish/
 # AI Agent specific
 agent_memory/
 agent_checkpoints/

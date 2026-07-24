@@ -599,23 +599,6 @@ staff.MapPost("/users/{id:guid}/notes", async (Guid id, HttpContext ctx, StaffNo
 app.MapHub<GameHub>("/hubs/game");
 app.MapHub<StaffHub>("/hubs/staff");
 
-// Test seed endpoint - remove in production
-app.MapPost("/api/seed/rooms", async (int count, IUnitOfWork uow) =>
-{
-    var hostId = Guid.NewGuid();
-    var timeControls = new[] { ("bullet", 60, 0), ("blitz", 180, 2), ("rapid", 600, 5), ("classic", 3600, 0) };
-    var rng = new Random();
-
-    for (int i = 0; i < count; i++)
-    {
-        var tc = timeControls[rng.Next(timeControls.Length)];
-        var room = Room.Create(hostId, tc.Item2, tc.Item3, rng.Next(2) == 0);
-        await uow.Rooms.AddAsync(room);
-    }
-    await uow.SaveChangesAsync();
-    return Results.Ok(new { created = count });
-});
-
 // Blazor
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
