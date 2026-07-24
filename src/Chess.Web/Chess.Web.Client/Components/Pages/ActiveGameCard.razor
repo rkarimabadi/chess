@@ -1,4 +1,4 @@
-<div class="ag-card" @onclick="OnClick">
+<div class="ag-card" @onclick="OnJoin">
     <div class="ag-top">
         <div class="ag-opponent">@OpponentUsername</div>
         <span class="ag-rating">@OpponentRating</span>
@@ -20,5 +20,5 @@
     [Parameter] public bool IsRated { get; set; }
     [Parameter] public int MoveCount { get; set; }
     [Parameter] public string TimeAgo { get; set; } = "";
-    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public EventCallback OnJoin { get; set; }
 }

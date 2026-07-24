@@ -1,5 +1,5 @@
 /* ActiveGamesPage scoped styles */
-.active-games-page { max-width: 700px; margin: 0 auto; }
+.active-games-page { margin: 0 auto; }
 .ag-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: var(--space-5);
@@ -31,5 +31,9 @@
 }
 @media (max-width: 768px) {
   .active-games-page { padding: 0 var(--space-4); }
-  .ag-header { flex-direction: column; gap: var(--space-3); text-align: center; }
+  .ag-header { flex-direction: row; gap: var(--space-3);}
+    .ag-empty-card {
+        min-width: 280px;
+        max-width: 100%;
+    }
 }
