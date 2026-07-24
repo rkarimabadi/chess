@@ -1,0 +1,5 @@
+/* Clock scoped styles */
+.clock-display { display: flex; align-items: center; }
+.clock { font-size: var(--text-title1); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.clock-low { color: var(--color-red); animation: pulse 1s ease infinite; }
+@keyframes pulse { 50% { opacity: .6; } }

@@ -1,0 +1,34 @@
+
+<div class="material-display">
+    @if (CapturedByWhite.Any())
+    {
+        <div class="captured-pieces captured-white">
+            @foreach (var p in CapturedByWhite)
+            {
+                <span class="captured-piece">@GetSymbol(p)</span>
+            }
+        </div>
+    }
+    @if (CapturedByBlack.Any())
+    {
+        <div class="captured-pieces captured-black">
+            @foreach (var p in CapturedByBlack)
+            {
+                <span class="captured-piece">@GetSymbol(p)</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> CapturedByWhite { get; set; } = new();
+    [Parameter] public List<string> CapturedByBlack { get; set; } = new();
+
+    private Dictionary<string, string> pieceMap = new()
+    {
+        ["p"]="♟", ["n"]="♞", ["b"]="♝", ["r"]="♜", ["q"]="♛",
+        ["P"]="♙", ["N"]="♘", ["B"]="♗", ["R"]="♖", ["Q"]="♕"
+    };
+
+    private string GetSymbol(string p) => pieceMap.GetValueOrDefault(p, p);
+}

@@ -1,0 +1,9 @@
+/* Static pages scoped styles */
+.static-page { max-width: 700px; margin: 0 auto; }
+.static-page h1 { font-size: var(--text-title1); font-weight: 700; margin-bottom: var(--space-4); }
+.static-page h2 { font-size: var(--text-title3); font-weight: 600; margin-top: var(--space-5); margin-bottom: var(--space-3); }
+.static-page p { color: var(--label-secondary); line-height: 1.75; margin-bottom: var(--space-4); font-size: var(--text-body); }
+@media (max-width: 768px) {
+  .static-page { padding: 0 var(--space-2); }
+  .static-page h1 { font-size: var(--text-title2); }
+}

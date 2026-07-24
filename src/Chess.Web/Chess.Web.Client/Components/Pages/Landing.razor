@@ -1,0 +1,71 @@
+@page "/"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+
+<PageTitle>شطرنج آنلاین</PageTitle>
+
+<div class="landing">
+    <div class="landing-hero">
+        <h1>شطرنج آنلاین</h1>
+        <p class="subtitle">بازی PvP منصفانه با رابط فارسی مدرن</p>
+        @if (isLoggedIn)
+        {
+            <div class="cta-buttons">
+                <a href="/play/queue" class="btn btn-primary"><i class="bi bi-play-fill"></i> بازی سریع</a>
+                <a href="/rooms/create" class="btn btn-secondary"><i class="bi bi-plus-lg"></i> ایجاد اتاق</a>
+            </div>
+        }
+        else
+        {
+            <div class="cta-buttons">
+                <a href="/auth/register" class="btn btn-primary"><i class="bi bi-rocket-takeoff-fill"></i> شروع بازی</a>
+                <a href="/auth/login" class="btn btn-secondary"><i class="bi bi-box-arrow-in-right"></i> ورود</a>
+            </div>
+        }
+    </div>
+    <div class="features">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+            <h3>قوانین کامل شطرنج</h3>
+            <p>اعتبارسنجی تمام حرکات روی سرور</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+            <h3>ساعت دقیق سرور</h3>
+            <p>کنترل زمان استاندارد فیشر</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-eye-fill"></i></div>
+            <h3>بازی منصفانه</h3>
+            <p>ضدتقلب و نظارت حرفه‌ای</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoggedIn = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckAuthState();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            isLoggedIn = response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            isLoggedIn = false;
+        }
+    }
+}

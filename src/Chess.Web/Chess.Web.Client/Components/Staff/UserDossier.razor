@@ -1,0 +1,256 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+@if (loading)
+{
+    <div class="staff-loading-inline">
+        <div class="queue-spinner" style="width:24px;height:24px;"></div>
+    </div>
+}
+else if (dossier is null)
+{
+    <div class="staff-empty">اطلاعات کاربر یافت نشد.</div>
+}
+else
+{
+    <div class="staff-dossier card">
+        <div class="staff-detail-header">
+            <h3>پرونده @dossier.User.Username</h3>
+            <button class="btn btn-secondary" style="min-height:32px;font-size:var(--font-size-xs);" @onclick="OnClose">بازگشت</button>
+        </div>
+
+        <div class="staff-dossier-info">
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">نام کاربری:</span>
+                <span>@dossier.User.Username</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">ایمیل:</span>
+                <span>@dossier.User.Email</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">نقش:</span>
+                <span class="staff-badge @RoleBadgeClass(dossier.User.Role)">@dossier.User.Role</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">وضعیت:</span>
+                <span class="staff-badge @StatusBadgeClass(dossier.User.Status)">@StatusLabel(dossier.User.Status)</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">ریتینگ:</span>
+                <span>@dossier.User.Rating</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">بازی‌ها:</span>
+                <span>@dossier.User.GamesPlayed</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">عضویت:</span>
+                <span>@dossier.User.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</span>
+            </div>
+            @if (dossier.User.LastLoginAt.HasValue)
+            {
+                <div class="staff-detail-row">
+                    <span class="staff-detail-label">آخرین ورود:</span>
+                    <span>@dossier.User.LastLoginAt.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</span>
+                </div>
+            }
+        </div>
+
+        <div class="staff-dossier-actions">
+            <button class="btn btn-primary" style="font-size:var(--font-size-xs);min-height:32px;"
+                    @onclick="() => showSanctionDialog = true">
+                اعمال تنبیه
+            </button>
+        </div>
+
+        @if (dossier.Sanctions.Count > 0)
+        {
+            <h4 class="staff-section-title">تنبیه‌ها</h4>
+            <table class="staff-table staff-table-sm">
+                <thead>
+                    <tr>
+                        <th>نوع</th>
+                        <th>دلیل</th>
+                        <th>شروع</th>
+                        <th>پایان</th>
+                        <th>وضعیت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in dossier.Sanctions)
+                    {
+                        <tr>
+                            <td>@SanctionTypeLabel(s.Type)</td>
+                            <td>@s.Reason</td>
+                            <td class="staff-date">@s.StartsAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
+                            <td class="staff-date">@(s.EndsAt?.ToLocalTime().ToString("yyyy/MM/dd") ?? "—")</td>
+                            <td><span class="staff-badge @(s.IsActive ? "staff-badge-danger" : "staff-badge-muted")">@(s.IsActive ? "فعال" : "غیرفعال")</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (dossier.Reports.Count > 0)
+        {
+            <h4 class="staff-section-title">گزارش‌ها</h4>
+            <table class="staff-table staff-table-sm">
+                <thead>
+                    <tr>
+                        <th>دلیل</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in dossier.Reports)
+                    {
+                        <tr>
+                            <td>@r.Reason</td>
+                            <td><span class="staff-badge @ReportStatusClass(r.Status)">@ReportStatusLabel(r.Status)</span></td>
+                            <td class="staff-date">@r.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (dossier.RecentGames.Count > 0)
+        {
+            <h4 class="staff-section-title">بازی‌های اخیر</h4>
+            <table class="staff-table staff-table-sm">
+                <thead>
+                    <tr>
+                        <th>حریف</th>
+                        <th>نتیجه</th>
+                        <th>تاریخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in dossier.RecentGames)
+                    {
+                        <tr>
+                            <td>@g.OpponentUsername</td>
+                            <td>@g.Result</td>
+                            <td class="staff-date">@g.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (showSanctionDialog)
+        {
+            <SanctionDialog UserId="@dossier.User.Id" OnClose="OnSanctionClose" OnApplied="OnSanctionApplied" />
+        }
+
+        @if (sanctionMessage != null)
+        {
+            <div class="staff-message staff-message-success">@sanctionMessage</div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid UserId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private UserDossierDto? dossier;
+    private bool loading = true;
+    private bool showSanctionDialog;
+    private string? sanctionMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UserId == Guid.Empty) return;
+
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            dossier = await http.GetFromJsonAsync<UserDossierDto>($"/api/staff/users/{UserId}");
+        }
+        catch
+        {
+            dossier = null;
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private void OnSanctionClose()
+    {
+        showSanctionDialog = false;
+    }
+
+    private async Task OnSanctionApplied()
+    {
+        showSanctionDialog = false;
+        sanctionMessage = "تنبیه با موفقیت اعمال شد.";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            dossier = await http.GetFromJsonAsync<UserDossierDto>($"/api/staff/users/{UserId}");
+        }
+        catch { }
+
+        StateHasChanged();
+    }
+
+    private static string RoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "staff-badge-danger",
+        "Moderator" => "staff-badge-info",
+        _ => "staff-badge-muted"
+    };
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Active" => "staff-badge-success",
+        "Banned" => "staff-badge-danger",
+        "Muted" => "staff-badge-warning",
+        _ => "staff-badge-muted"
+    };
+
+    private static string StatusLabel(string status) => status switch
+    {
+        "Active" => "فعال",
+        "Banned" => "مسدود",
+        "Muted" => "بی‌صدا",
+        _ => status
+    };
+
+    private static string SanctionTypeLabel(string type) => type switch
+    {
+        "Warning" => "اخطار",
+        "Mute" => "بی‌صدا",
+        "TempBan" => "مسدود موقت",
+        "PermBan" => "مسدود دائم",
+        _ => type
+    };
+
+    private static string ReportStatusClass(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "staff-badge-warning",
+        "resolved" => "staff-badge-success",
+        "dismissed" => "staff-badge-muted",
+        _ => ""
+    };
+
+    private static string ReportStatusLabel(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "باز",
+        "resolved" => "حل‌شده",
+        "dismissed" => "رد‌شده",
+        _ => status
+    };
+}

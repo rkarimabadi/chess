@@ -1,0 +1,42 @@
+@using Chess.Domain.ValueObjects
+@using Chess.Domain.Chess
+
+<div class="square @(IsSelected ? "selected" : "") @(IsLegalTarget ? "legal-target" : "") @(IsLastMove ? "last-move" : "") @(IsCheck ? "in-check" : "")"
+     style="background-color: @(IsLight ? "var(--square-light)" : "var(--square-dark)")"
+     @onclick="OnClick">
+    @if (Piece != null)
+    {
+        <span class="piece piece-@Piece.Color.ToString().ToLower() piece-@Piece.Type.ToString().ToLower()">
+            @GetPieceSymbol(Piece)
+        </span>
+    }
+    @if (IsLegalTarget && Piece == null)
+    {
+        <span class="dot-indicator"></span>
+    }
+    @if (IsLegalTarget && Piece != null)
+    {
+        <span class="capture-indicator"></span>
+    }
+</div>
+
+@code {
+    [Parameter] public Piece? Piece { get; set; }
+    [Parameter] public bool IsLight { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsLegalTarget { get; set; }
+    [Parameter] public bool IsLastMove { get; set; }
+    [Parameter] public bool IsCheck { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private static string GetPieceSymbol(Piece piece) => piece.Type switch
+    {
+        PieceType.King => piece.Color == PieceColor.White ? "♔" : "♚",
+        PieceType.Queen => piece.Color == PieceColor.White ? "♕" : "♛",
+        PieceType.Rook => piece.Color == PieceColor.White ? "♖" : "♜",
+        PieceType.Bishop => piece.Color == PieceColor.White ? "♗" : "♝",
+        PieceType.Knight => piece.Color == PieceColor.White ? "♘" : "♞",
+        PieceType.Pawn => piece.Color == PieceColor.White ? "♙" : "♟",
+        _ => ""
+    };
+}

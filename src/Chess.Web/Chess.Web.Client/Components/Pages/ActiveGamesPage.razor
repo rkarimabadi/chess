@@ -1,0 +1,126 @@
+@page "/play/active"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+
+<PageTitle>بازی‌های فعال — شطرنج آنلاین</PageTitle>
+
+<div class="active-games-page">
+    <div class="ag-header">
+        <h2>بازی‌های فعال</h2>
+    </div>
+
+    @if (loading)
+    {
+        <HistoryLoadingCard />
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <HistoryErrorCard ErrorMessage="@errorMessage" OnRetry="LoadGames" />
+    }
+    else if (games.Count == 0)
+    {
+        <div class="ag-empty-card">
+            <div class="ag-icon-circle">
+                <i class="bi bi-controller"></i>
+            </div>
+            <p>بازی فعالی ندارید.</p>
+            <a href="/play/queue" class="btn btn-primary" style="width:100%;">
+                <i class="bi bi-play-fill"></i> شروع بازی جدید
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="ag-list">
+            @foreach (var game in games)
+            {
+                <ActiveGameCard
+                    OpponentUsername="@game.OpponentUsername"
+                    OpponentRating="@game.OpponentRating"
+                    TimeControl="@game.TimeControl"
+                    IsRated="@game.IsRated"
+                    MoveCount="@game.MoveCount"
+                    TimeAgo="@GetTimeAgo(game.CreatedAt)"
+                    OnJoin="() => JoinGame(game.GameId)" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ActiveGameItem> games = new();
+    private bool loading = true;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await CheckAuthState())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+        await LoadGames();
+    }
+
+    private async Task<bool> CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private void JoinGame(Guid gameId)
+    {
+        Nav.NavigateTo($"/game/{gameId}");
+    }
+
+    private async Task LoadGames()
+    {
+        loading = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var result = await http.GetFromJsonAsync<List<ActiveGameItem>>("/api/games/active");
+            games = result ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطا در بارگذاری بازی‌ها: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTimeAgo(DateTime createdAt)
+    {
+        var diff = DateTime.UtcNow - createdAt;
+        if (diff.TotalMinutes < 1) return "همین الان";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} دقیقه پیش";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} ساعت پیش";
+        return $"{(int)diff.TotalDays} روز پیش";
+    }
+
+    private class ActiveGameItem
+    {
+        public Guid GameId { get; set; }
+        public string OpponentUsername { get; set; } = "";
+        public int OpponentRating { get; set; }
+        public bool IsRated { get; set; }
+        public string Variant { get; set; } = "";
+        public int MoveCount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string TimeControl { get; set; } = "";
+    }
+}

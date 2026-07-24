@@ -1,0 +1,4 @@
+/* ReportDetail — scoped styles */
+.report-detail { padding: var(--space-4); }
+.report-detail .staff-detail-body { margin-bottom: var(--space-4); }
+.report-actions { margin-top: var(--space-4); }

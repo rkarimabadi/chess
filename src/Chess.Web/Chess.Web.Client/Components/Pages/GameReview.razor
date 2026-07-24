@@ -1,0 +1,189 @@
+@page "/history/{GameId}"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+
+<PageTitle>بازبینی بازی — شطرنج آنلاین</PageTitle>
+
+<div class="review-page">
+    @if (loading)
+    {
+        <GameReviewLoadingCard />
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <GameReviewErrorCard ErrorMessage="@errorMessage" />
+    }
+    else if (game is not null)
+    {
+        <div class="review-content">
+            <GameReviewHeader
+                WhiteUsername="@game.White.Username" WhiteRating="@game.White.Rating"
+                BlackUsername="@game.Black.Username" BlackRating="@game.Black.Rating"
+                ResultText="@GetResultText()" ReasonText="@GetReasonText()" />
+
+            <div class="review-board">
+                <ChessBoard BoardState="@currentFen" IsMyTurn="false" MyColor="White"
+                            LastMoveFrom="@lastMoveFrom" LastMoveTo="@lastMoveTo" />
+            </div>
+
+            <GameReviewControls
+                CurrentIndex="@currentMoveIndex"
+                TotalMoves="@game.Moves.Count"
+                OnGoToStart="GoToStart"
+                OnGoBack="GoBack"
+                OnGoForward="GoForward"
+                OnGoToEnd="GoToEnd" />
+
+            <ReviewMoveList
+                Moves="@moveItems"
+                CurrentIndex="@currentMoveIndex"
+                OnMoveClick="GoToMove" />
+
+            <div style="margin-top:var(--space-lg);text-align:center;">
+                <a href="/history" class="btn btn-secondary"><i class="bi bi-arrow-right"></i> بازگشت به تاریخچه</a>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string GameId { get; set; } = "";
+
+    private GameDetails? game;
+    private List<ReviewMoveList.MoveItem> moveItems = new();
+    private bool loading = true;
+    private string errorMessage = "";
+    private int currentMoveIndex = -1;
+    private string currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    private string? lastMoveFrom;
+    private string? lastMoveTo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            game = await http.GetFromJsonAsync<GameDetails>($"/api/history/{GameId}");
+            if (game != null && game.FenHistory.Count > 0)
+            {
+                currentFen = game.FenHistory[0];
+                moveItems = game.Moves.Select(m => new ReviewMoveList.MoveItem { San = m.San }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطا در بارگذاری بازی: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetResultText() => game?.Result switch
+    {
+        "WhiteWins" => "برد سفید",
+        "BlackWins" => "برد سیاه",
+        "Draw" => "تساوی",
+        _ => "نامشخص"
+    };
+
+    private string GetReasonText() => game?.Reason switch
+    {
+        "Checkmate" => "کیش‌مات",
+        "Stalemate" => "بن‌بست",
+        "Resignation" => "تسلیم",
+        "Agreement" => "توافق",
+        "Timeout" => "اتمام زمان",
+        "Disconnect" => "قطع اتصال",
+        _ => game?.Reason ?? ""
+    };
+
+    private void GoToStart()
+    {
+        currentMoveIndex = -1;
+        currentFen = game?.FenHistory?.FirstOrDefault() ?? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        lastMoveFrom = null;
+        lastMoveTo = null;
+    }
+
+    private void GoBack()
+    {
+        if (currentMoveIndex >= 0)
+        {
+            currentMoveIndex--;
+            if (currentMoveIndex >= 0 && game != null && currentMoveIndex < game.FenHistory.Count)
+            {
+                currentFen = game.FenHistory[currentMoveIndex + 1];
+                lastMoveFrom = game.Moves[currentMoveIndex].From;
+                lastMoveTo = game.Moves[currentMoveIndex].To;
+            }
+            else
+            {
+                currentFen = game?.FenHistory?.FirstOrDefault() ?? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+                lastMoveFrom = null;
+                lastMoveTo = null;
+            }
+        }
+    }
+
+    private void GoForward()
+    {
+        if (game != null && currentMoveIndex < game.Moves.Count - 1)
+        {
+            currentMoveIndex++;
+            if (currentMoveIndex < game.FenHistory.Count)
+                currentFen = game.FenHistory[currentMoveIndex + 1];
+            lastMoveFrom = game.Moves[currentMoveIndex].From;
+            lastMoveTo = game.Moves[currentMoveIndex].To;
+        }
+    }
+
+    private void GoToEnd()
+    {
+        if (game != null)
+        {
+            currentMoveIndex = game.Moves.Count - 1;
+            currentFen = game.FenHistory.LastOrDefault() ?? game.FinalFen;
+            lastMoveFrom = game.Moves[currentMoveIndex].From;
+            lastMoveTo = game.Moves[currentMoveIndex].To;
+        }
+    }
+
+    private void GoToMove(int index)
+    {
+        currentMoveIndex = index;
+        if (game != null)
+        {
+            if (index < game.FenHistory.Count)
+                currentFen = game.FenHistory[index + 1];
+            lastMoveFrom = game.Moves[index].From;
+            lastMoveTo = game.Moves[index].To;
+        }
+    }
+
+    private class GameDetails
+    {
+        public PlayerInfo White { get; set; } = new();
+        public PlayerInfo Black { get; set; } = new();
+        public string Result { get; set; } = "";
+        public string Reason { get; set; } = "";
+        public string FinalFen { get; set; } = "";
+        public List<MoveInfo> Moves { get; set; } = new();
+        public List<string> FenHistory { get; set; } = new();
+    }
+
+    private class PlayerInfo
+    {
+        public string Username { get; set; } = "";
+        public int Rating { get; set; }
+    }
+
+    private class MoveInfo
+    {
+        public string San { get; set; } = "";
+        public string From { get; set; } = "";
+        public string To { get; set; } = "";
+    }
+}

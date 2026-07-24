@@ -1,0 +1,10 @@
+/* Classic Skin — Default piece/board theme (F-THM-01) */
+:root {
+  --board-light: #f0d9b5;
+  --board-dark: #b58863;
+  --board-border: #8b6914;
+  --board-highlight-last: rgba(255, 255, 0, 0.4);
+  --board-highlight-legal: rgba(0, 128, 0, 0.3);
+  --board-highlight-check: rgba(255, 0, 0, 0.5);
+  --piece-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}

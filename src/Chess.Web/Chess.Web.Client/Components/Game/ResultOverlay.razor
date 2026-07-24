@@ -1,0 +1,54 @@
+
+@if (Show)
+{
+    <div class="result-overlay" @onclick="GoHome">
+        <div class="result-card result-animate">
+            <div class="result-icon-circle @(IsWin ? "result-icon-circle--win" : IsDraw ? "result-icon-circle--draw" : "result-icon-circle--loss")">
+                @if (IsWin)
+                {
+                    <i class="bi bi-trophy-fill"></i>
+                }
+                else if (IsDraw)
+                {
+                    <i class="bi bi-handshake"></i>
+                }
+                else
+                {
+                    <i class="bi bi-emoji-frown"></i>
+                }
+            </div>
+
+            <h2 class="result-title @(IsWin ? "result-title--win" : IsDraw ? "result-title--draw" : "result-title--loss")">@ResultText</h2>
+            <p class="result-reason">@ReasonText</p>
+
+            @if (MyRatingDelta.HasValue && MyRatingDelta.Value != 0)
+            {
+                <div class="result-rating">
+                    <RatingDeltaCard Delta="@MyRatingDelta.Value" />
+                </div>
+            }
+
+            <div class="result-actions">
+                <button class="result-btn result-btn--primary" @onclick:stopPropagation="true" @onclick="GoHome">
+                    <i class="bi bi-house"></i>
+                    بازگشت به خانه
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string ResultText { get; set; } = "";
+    [Parameter] public string ReasonText { get; set; } = "";
+    [Parameter] public int? MyRatingDelta { get; set; }
+    [Parameter] public bool IsWin { get; set; }
+    [Parameter] public bool IsDraw { get; set; }
+    [Parameter] public EventCallback OnGoHome { get; set; }
+
+    private async Task GoHome()
+    {
+        await OnGoHome.InvokeAsync();
+    }
+}

@@ -1,0 +1,59 @@
+/* ToastContainer scoped styles */
+.swift-toast-container {
+  position: fixed;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1055;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 90%;
+  pointer-events: none;
+}
+
+::deep .swift-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  background-color: var(--background-secondary);
+  color: var(--label);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: .5px solid var(--separator);
+  font-size: var(--text-subhead);
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: default;
+  pointer-events: auto;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+  transform: translateY(-16px);
+}
+
+@media (prefers-color-scheme: dark) {
+  ::deep .swift-toast {
+    background: #343a40;
+    border-color: #495057;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+::deep .swift-toast-icon {
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+}
+
+::deep .swift-toast.success .swift-toast-icon { color: var(--color-green); }
+::deep .swift-toast.info .swift-toast-icon { color: var(--color-blue); }
+::deep .swift-toast.warning .swift-toast-icon { color: var(--color-orange); }
+::deep .swift-toast.error .swift-toast-icon { color: var(--color-red); }
+
+::deep .swift-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}

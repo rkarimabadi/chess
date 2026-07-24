@@ -1,0 +1,217 @@
+@page "/rooms"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Net.Http.Json
+@implements IAsyncDisposable
+
+<PageTitle>اتاق‌ها — شطرنج آنلاین</PageTitle>
+
+<div class="rooms-page">
+    <div class="rooms-header">
+        <h2>اتاق‌های باز</h2>
+        <a href="/rooms/create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> ایجاد اتاق جدید</a>
+    </div>
+
+    @if (isLoading && rooms.Count == 0)
+    {
+        <RoomListLoadingCard />
+    }
+    else if (!string.IsNullOrEmpty(errorMessage) && rooms.Count == 0)
+    {
+        <RoomListErrorCard ErrorMessage="@errorMessage" OnRetry="LoadMore" />
+    }
+    else if (rooms.Count == 0)
+    {
+        <RoomListEmptyCard />
+    }
+    else
+    {
+        <div class="room-list">
+            @foreach (var room in rooms)
+            {
+                <RoomCard TimeControl="@room.TimeControl" IsRated="@room.IsRated" TimeAgo="@GetTimeAgo(room.CreatedAt)" OnJoin="() => JoinRoom(room.RoomId)" />
+            }
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="rl-load-more">
+                <div class="rl-spinner-sm"></div>
+            </div>
+        }
+        else if (hasMore)
+        {
+            <div id="rl-sentinel" class="rl-sentinel"></div>
+        }
+        else
+        {
+            <p class="rl-end">اتاق دیگری وجود ندارد</p>
+        }
+    }
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<RoomListItem> rooms = new();
+    private bool isLoading = false;
+    private bool hasMore = true;
+    private string errorMessage = "";
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private DotNetObjectReference<RoomBrowser>? objRef;
+    private IJSObjectReference? module;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMore();
+        await ConnectToHub();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && rooms.Count > 0)
+        {
+            await SetupIntersectionObserver();
+        }
+    }
+
+    private async Task SetupIntersectionObserver()
+    {
+        try
+        {
+            objRef = DotNetObjectReference.Create(this);
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/room-browser.js");
+            await module.InvokeVoidAsync("observeSentinel", objRef);
+        }
+        catch { }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (isLoading || !hasMore) return;
+
+        isLoading = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var result = await http.GetFromJsonAsync<RoomsResponse>($"/api/rooms?page={currentPage}&pageSize={pageSize}");
+            if (result?.Items != null && result.Items.Count > 0)
+            {
+                rooms.AddRange(result.Items);
+                currentPage++;
+                hasMore = result.Items.Count == pageSize;
+            }
+            else
+            {
+                hasMore = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطا در بارگذاری اتاق‌ها: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+            if (hasMore && rooms.Count > 0)
+            {
+                await SetupIntersectionObserver();
+            }
+        }
+    }
+
+    private async Task<bool> CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task ConnectToHub()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(Nav.ToAbsoluteUri("/hubs/game"))
+                .WithAutomaticReconnect()
+                .Build();
+
+            hubConnection.On("RoomListUpdated", async () =>
+            {
+                currentPage = 1;
+                hasMore = true;
+                rooms.Clear();
+                await LoadMore();
+            });
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("JoinRoomList");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Room list hub connection failed: {ex.Message}");
+        }
+    }
+
+    private async Task JoinRoom(Guid roomId)
+    {
+        if (!await CheckAuthState())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+        Nav.NavigateTo($"/rooms/{roomId}");
+    }
+
+    private string GetTimeAgo(DateTime createdAt)
+    {
+        var diff = DateTime.UtcNow - createdAt;
+        if (diff.TotalMinutes < 1) return "همین الان";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} دقیقه پیش";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} ساعت پیش";
+        return $"{(int)diff.TotalDays} روز پیش";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            try
+            {
+                await hubConnection.SendAsync("LeaveRoomList");
+            }
+            catch { }
+            await hubConnection.DisposeAsync();
+        }
+        objRef?.Dispose();
+    }
+
+    private class RoomsResponse
+    {
+        public List<RoomListItem> Items { get; set; } = new();
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+    }
+
+    private class RoomListItem
+    {
+        public Guid RoomId { get; set; }
+        public Guid HostId { get; set; }
+        public string TimeControl { get; set; } = "";
+        public bool IsRated { get; set; }
+        public string InviteCode { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+}

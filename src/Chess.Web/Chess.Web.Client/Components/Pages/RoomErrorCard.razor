@@ -1,0 +1,20 @@
+<div class="rl-error-card">
+    <div class="rl-icon-circle rl-icon-circle--error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <p class="rl-error-msg">@ErrorMessage</p>
+    <div class="rl-error-actions">
+        <button class="btn btn-primary" @onclick="OnRetry">
+            <i class="bi bi-arrow-clockwise"></i> تلاش مجدد
+        </button>
+        <button class="btn btn-secondary" @onclick="OnBack">
+            <i class="bi bi-arrow-right"></i> بازگشت
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+}

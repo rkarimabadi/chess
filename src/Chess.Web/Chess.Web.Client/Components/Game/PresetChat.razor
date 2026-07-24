@@ -1,0 +1,80 @@
+<div class="preset-chat">
+    @if (ReceivedMessages.Any())
+    {
+        <div class="preset-conversation">
+            @foreach (var msg in ReceivedMessages.TakeLast(3))
+            {
+                var parts = msg.Split(": ", 2);
+                var sender = parts.Length > 0 ? parts[0] : "";
+                var text = parts.Length > 1 ? parts[1] : msg;
+                var isMe = sender == "شما";
+                <div class="preset-line @(isMe ? "preset-line--me" : "")">
+                    @if (!isMe)
+                    {
+                        <span class="preset-sender">@sender</span>
+                    }
+                    <span class="preset-text">@text</span>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="preset-messages">
+        @foreach (var msg in PresetMessages)
+        {
+            <button class="preset-btn" @onclick="() => SendPreset(msg.Key)"
+                    disabled="@(cooldownSeconds > 0)">
+                @msg.Label
+            </button>
+        }
+    </div>
+
+    @if (cooldownSeconds > 0)
+    {
+        <div class="preset-cooldown">@cooldownSeconds ثانیه صبر کنید</div>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<string> OnSendPreset { get; set; }
+    [Parameter] public List<string> ReceivedMessages { get; set; } = new();
+
+    private int cooldownSeconds = 0;
+    private System.Threading.Timer? cooldownTimer;
+
+    private List<(string Key, string Label)> PresetMessages = new()
+    {
+        ("hello", "سلام!"),
+        ("good_game", "بازی خوبی بود"),
+        ("thanks", "ممنون"),
+        ("well_played", "خوب بازی کردی"),
+        ("bye", "خداحافظ"),
+        ("nice_move", "حرکت خوبی بود"),
+        ("good_luck", "موفق باشی"),
+        ("wait", "صبر کن"),
+        ("hurry", "عجله کن"),
+        ("bravo", "آفرین")
+    };
+
+    private async Task SendPreset(string key)
+    {
+        if (cooldownSeconds > 0) return;
+
+        await OnSendPreset.InvokeAsync(key);
+
+        cooldownSeconds = 3;
+        StateHasChanged();
+
+        cooldownTimer?.Dispose();
+        cooldownTimer = new System.Threading.Timer(_ =>
+        {
+            cooldownSeconds--;
+            InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+    }
+
+    public void Dispose()
+    {
+        cooldownTimer?.Dispose();
+    }
+}

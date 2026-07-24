@@ -1,0 +1,98 @@
+/* ResultOverlay scoped styles — integrated design */
+
+/* ─── Overlay ─── */
+.result-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+
+/* ─── Card ─── */
+.result-card {
+  text-align: center;
+  background: var(--background-secondary);
+  border-radius: 16px;
+  padding: 32px 36px 28px;
+  min-width: 280px; max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  animation: resultPopIn 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark) {
+  .result-card { box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+}
+@keyframes resultPopIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Icon circle ─── */
+.result-icon-circle {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  animation: iconBounce 0.5s ease 0.2s both;
+}
+@keyframes iconBounce {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.result-icon-circle--win {
+  background: rgba(40,167,69,.12);
+  color: var(--color-green);
+}
+.result-icon-circle--draw {
+  background: rgba(94,114,228,.12);
+  color: var(--color-blue);
+}
+.result-icon-circle--loss {
+  background: rgba(220,53,69,.10);
+  color: var(--color-red);
+}
+
+/* ─── Text ─── */
+.result-title {
+  font-size: var(--text-title2);
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.result-title--win { color: var(--color-green); }
+.result-title--draw { color: var(--color-blue); }
+.result-title--loss { color: var(--color-red); }
+
+.result-reason {
+  font-size: var(--text-subhead);
+  color: var(--label-secondary);
+  margin: 0 0 16px;
+}
+
+/* ─── Rating ─── */
+.result-rating {
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* ─── Button ─── */
+.result-actions { margin-top: 4px; }
+
+.result-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 24px; border-radius: 10px;
+  border: none; font-size: var(--text-subhead); font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+  min-height: 42px;
+}
+.result-btn:active { transform: scale(0.97); }
+.result-btn--primary {
+  background: var(--color-blue); color: #fff;
+}
+.result-btn--primary:hover { filter: brightness(1.08); }
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .result-card { min-width: auto; width: calc(100% - 32px); padding: 24px 20px; }
+}

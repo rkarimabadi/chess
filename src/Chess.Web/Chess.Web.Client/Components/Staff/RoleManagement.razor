@@ -1,0 +1,139 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<div class="staff-role-management">
+    <div class="staff-search-box">
+        <input class="input" @bind="query" @bind:event="oninput" @onkeydown="OnKeyDown"
+               placeholder="جست‌وجوی کاربر برای تغییر نقش..." />
+        <button class="btn btn-primary" @onclick="Search" disabled="@loading">جست‌وجو</button>
+    </div>
+
+    @if (loading)
+    {
+        <div class="staff-loading-inline">
+            <div class="queue-spinner" style="width:24px;height:24px;"></div>
+        </div>
+    }
+    else if (results.Count > 0)
+    {
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>نام کاربری</th>
+                    <th>نقش فعلی</th>
+                    <th>تغییر نقش</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in results)
+                {
+                    <tr>
+                        <td><span class="staff-user-link">@user.Username</span></td>
+                        <td><span class="staff-badge @RoleBadgeClass(user.Role)">@user.Role</span></td>
+                        <td>
+                            <select class="input" style="width:auto;min-height:32px;font-size:var(--font-size-xs);"
+                                    value="@user.Role" @onchange="e => OnRoleChanged(user, e)">
+                                <option value="User">User</option>
+                                <option value="Moderator">Moderator</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else if (hasSearched)
+    {
+        <div class="staff-empty">کاربری یافت نشد.</div>
+    }
+
+    @if (message != null)
+    {
+        <div class="staff-message @(isError ? "staff-message-error" : "staff-message-success")">@message</div>
+    }
+</div>
+
+@code {
+    private string query = "";
+    private List<UserDto> results = new();
+    private bool loading;
+    private bool hasSearched;
+    private string? message;
+    private bool isError;
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2) return;
+
+        loading = true;
+        hasSearched = true;
+        message = null;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            results = await http.GetFromJsonAsync<List<UserDto>>($"/api/staff/users/search?q={Uri.EscapeDataString(query)}") ?? new();
+        }
+        catch
+        {
+            results = new();
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await Search();
+    }
+
+    private async Task OnRoleChanged(UserDto user, ChangeEventArgs e)
+    {
+        var newRole = e.Value?.ToString();
+        if (string.IsNullOrEmpty(newRole) || newRole == user.Role) return;
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            var req = new AssignRoleRequest(user.Id, newRole);
+            var resp = await http.PostAsJsonAsync("/api/staff/roles", req);
+
+            if (resp.IsSuccessStatusCode)
+            {
+                message = $"نقش {user.Username} به {newRole} تغییر یافت.";
+                isError = false;
+                var idx = results.FindIndex(u => u.Id == user.Id);
+                if (idx >= 0)
+                {
+                    results[idx] = results[idx] with { Role = newRole };
+                }
+            }
+            else
+            {
+                message = "خطا در تغییر نقش.";
+                isError = true;
+            }
+        }
+        catch
+        {
+            message = "خطا در اتصال به سرور.";
+            isError = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private static string RoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "staff-badge-danger",
+        "Moderator" => "staff-badge-info",
+        _ => "staff-badge-muted"
+    };
+}

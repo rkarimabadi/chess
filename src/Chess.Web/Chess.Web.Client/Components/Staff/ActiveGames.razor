@@ -1,0 +1,58 @@
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+
+@if (loading)
+{
+    <div class="staff-loading-inline">
+        <div class="queue-spinner" style="width:24px;height:24px;"></div>
+    </div>
+}
+else if (games.Count == 0)
+{
+    <div class="staff-empty">بازی فعالی وجود ندارد.</div>
+}
+else
+{
+    <table class="staff-table">
+        <thead>
+            <tr>
+                <th>سفید</th>
+                <th>سیاه</th>
+                <th>نوع</th>
+                <th>حرکت</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var game in games)
+            {
+                <tr>
+                    <td>@game.White.Username <span class="staff-text-muted">(@game.White.Rating)</span></td>
+                    <td>@game.Black.Username <span class="staff-text-muted">(@game.Black.Rating)</span></td>
+                    <td><span class="staff-badge staff-badge-success">@game.Variant</span></td>
+                    <td>@game.MoveCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<SpectatableGameDto> games = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            games = await http.GetFromJsonAsync<List<SpectatableGameDto>>("/api/staff/games/active") ?? new();
+        }
+        catch
+        {
+            games = new();
+        }
+
+        loading = false;
+    }
+}

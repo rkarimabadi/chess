@@ -1,0 +1,4 @@
+/* UserDossier — scoped styles */
+.user-dossier { padding: var(--space-4); }
+.user-dossier-info { margin-bottom: var(--space-4); }
+.user-dossier-actions { margin-bottom: var(--space-4); }

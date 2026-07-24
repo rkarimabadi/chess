@@ -1,0 +1,54 @@
+@page "/staff"
+@rendermode InteractiveWebAssembly
+@layout StaffLayout
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<PageTitle>داشبورد کارکنان — شطرنج آنلاین</PageTitle>
+
+<div class="staff-page">
+    <h2 class="staff-page-title">داشبورد</h2>
+
+    @if (loading)
+    {
+        <div class="staff-loading">
+            <div class="queue-spinner"></div>
+        </div>
+    }
+    else if (dashboard is not null)
+    {
+        <div class="staff-stats-grid">
+            <StatCard Icon="bi-people-fill" Value="@dashboard.OnlineUsers.ToString()" Label="کاربران آنلاین" />
+            <StatCard Icon="bi-controller" Value="@dashboard.ActiveGames.ToString()" Label="بازی‌های فعال" />
+            <StatCard Icon="bi-search" Value="@dashboard.QueueLength.ToString()" Label="صف انتظار" />
+            <StatCard Icon="bi-flag" Value="@dashboard.OpenReports.ToString()" Label="گزارش‌های باز" />
+            <StatCard Icon="bi-slash-circle" Value="@dashboard.RecentBans.ToString()" Label="مسدودیت‌های اخیر" />
+        </div>
+    }
+    else
+    {
+        <div class="error-message">خطا در بارگذاری داشبورد.</div>
+    }
+</div>
+
+@code {
+    private DashboardDto? dashboard;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            dashboard = await http.GetFromJsonAsync<DashboardDto>("/api/staff/dashboard");
+        }
+        catch
+        {
+            dashboard = null;
+        }
+
+        loading = false;
+    }
+}

@@ -1,0 +1,60 @@
+/* GameActions scoped styles */
+.game-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: var(--text-subhead);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 42px;
+}
+.action-btn:active { transform: scale(0.97); }
+.action-btn--pending {
+  opacity: .6;
+  pointer-events: none;
+  animation: pulsePending 1.5s ease-in-out infinite;
+}
+@keyframes pulsePending {
+  0%, 100% { opacity: .6; }
+  50% { opacity: .4; }
+}
+
+.action-btn--draw {
+  background: var(--fill);
+  color: var(--label-secondary);
+  border: .5px solid var(--separator);
+}
+.action-btn--draw:hover:not(:disabled) {
+  background: rgba(94,114,228,.08);
+  color: var(--color-blue);
+  border-color: rgba(94,114,228,.2);
+}
+@media (prefers-color-scheme: dark) {
+  .action-btn--draw { background: #2c313a; border-color: #3a3f47; }
+  .action-btn--draw:hover:not(:disabled) { background: rgba(126,142,233,.1); border-color: rgba(126,142,233,.2); }
+}
+
+.action-btn--resign {
+  background: rgba(220,53,69,.06);
+  color: var(--color-red);
+  border: .5px solid rgba(220,53,69,.15);
+}
+.action-btn--resign:hover {
+  background: rgba(220,53,69,.12);
+  border-color: rgba(220,53,69,.3);
+}
+@media (prefers-color-scheme: dark) {
+  .action-btn--resign { background: rgba(251,99,64,.08); border-color: rgba(251,99,64,.15); }
+  .action-btn--resign:hover { background: rgba(251,99,64,.15); border-color: rgba(251,99,64,.3); }
+}

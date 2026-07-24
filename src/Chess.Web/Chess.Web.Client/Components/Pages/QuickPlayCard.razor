@@ -1,0 +1,15 @@
+<div class="card quick-play">
+    <div class="qp-header mb-2">
+        <div class="qp-icon"><i class="bi @Icon"></i></div>
+        <h4 class="qp-title">@Title</h4>
+    </div>
+    <p class="qp-desc mb-4">@Description</p>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "bi-lightning-charge-fill";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

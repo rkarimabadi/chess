@@ -1,0 +1,18 @@
+<div class="qsc-card">
+    <div class="qsc-icon-circle">
+        <i class="bi bi-search"></i>
+    </div>
+    <h3>در حال جست‌وجوی حریف...</h3>
+    <p class="qsc-meta">@TimeControlLabel • @(IsRated ? "ریتینگ" : "دوستانه")</p>
+    <div class="qsc-timer">@ElapsedTime</div>
+    <button class="btn btn-secondary" style="width:100%;" @onclick="OnCancel">
+        <i class="bi bi-x-lg"></i> لغو جست‌وجو
+    </button>
+</div>
+
+@code {
+    [Parameter] public string ElapsedTime { get; set; } = "00:00";
+    [Parameter] public string TimeControlLabel { get; set; } = "";
+    [Parameter] public bool IsRated { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

@@ -1,0 +1,65 @@
+<div class="rm-list">
+    <div class="rm-header">
+        <h4><i class="bi bi-list-nested" style="margin-inline-end:6px"></i>تاریخچه حرکات</h4>
+        <span class="rm-count">@Moves.Count حرکت</span>
+    </div>
+
+    @if (Moves.Count == 0)
+    {
+        <div class="rm-empty">هنوز حرکتی انجام نشده</div>
+    }
+    else
+    {
+        <div class="rm-table">
+            <div class="rm-table-header">
+                <span class="rm-col-num">#</span>
+                <span class="rm-col-white">
+                    <span class="rm-dot rm-dot--white"></span>
+                    سفید
+                </span>
+                <span class="rm-col-black">
+                    <span class="rm-dot rm-dot--black"></span>
+                    سیاه
+                </span>
+            </div>
+            <div class="rm-table-body">
+                @for (int i = 0; i < Moves.Count; i += 2)
+                {
+                    var moveNum = (i / 2) + 1;
+                    var whiteIndex = i;
+                    var blackIndex = i + 1;
+                    var whiteSan = Moves[i].San;
+                    var blackSan = blackIndex < Moves.Count ? Moves[blackIndex].San : "";
+                    var isWhiteCurrent = whiteIndex == CurrentIndex;
+                    var isBlackCurrent = blackIndex == CurrentIndex;
+
+                    <div class="rm-row">
+                        <span class="rm-col-num">@moveNum.</span>
+                        <span class="rm-col-white @(isWhiteCurrent ? "rm-move--current" : "")"
+                              @onclick="() => OnMoveClick.InvokeAsync(whiteIndex)">@whiteSan</span>
+                        @if (!string.IsNullOrEmpty(blackSan))
+                        {
+                            <span class="rm-col-black @(isBlackCurrent ? "rm-move--current" : "")"
+                                  @onclick="() => OnMoveClick.InvokeAsync(blackIndex)">@blackSan</span>
+                        }
+                        else
+                        {
+                            <span class="rm-col-black"></span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<MoveItem> Moves { get; set; } = new();
+    [Parameter] public int CurrentIndex { get; set; } = -1;
+    [Parameter] public EventCallback<int> OnMoveClick { get; set; }
+
+    public class MoveItem
+    {
+        public string San { get; set; } = "";
+    }
+}

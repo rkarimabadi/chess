@@ -1,0 +1,44 @@
+/* ChessBoard scoped styles */
+.chess-board {
+  display: flex; flex-direction: column;
+  width: var(--size-board); border-radius: var(--radius-md); overflow: hidden;
+  border: .5px solid var(--separator);
+}
+.board-squares-area { display: flex; flex-direction: row; }
+.board-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; aspect-ratio: 1; }
+.board-flipped .board-grid { direction: rtl; }
+.board-flipped .board-squares-area { flex-direction: row-reverse; }
+.board-coordinates { display: flex; }
+.board-coordinates-left { flex-direction: column; width: 1.2em; }
+.board-coordinates-bottom { flex-direction: row; height: 1.2em; padding-left: 1.2em; }
+.coord-label {
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65em; color: var(--label-tertiary); font-weight: 500; user-select: none;
+}
+.board-coordinates-left .coord-label { flex: 1; }
+.board-coordinates-bottom .coord-label { flex: 1; }
+.square {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; font-size: calc(var(--size-board) / 12);
+  transition: background-color var(--duration-fast);
+}
+.square-light { background-color: var(--board-light); }
+.square-dark { background-color: var(--board-dark); }
+.square-selected { background-color: var(--board-selected) !important; }
+.square-last-move { background-color: var(--board-last-move) !important; }
+.square-check { background-color: var(--board-check) !important; }
+.square-legal-move::after {
+  content: ''; position: absolute; width: 25%; height: 25%;
+  background: var(--board-legal-move); border-radius: 50%;
+}
+@keyframes piece-move { from { transform: scale(1.1); } to { transform: scale(1); } }
+.piece-animate { animation: piece-move 150ms var(--ease-out); }
+@keyframes board-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.board-shake { animation: board-shake 300ms ease; }
+@media (max-width: 768px) {
+  :root { --size-board: min(95vw, 400px); }
+  .square { font-size: calc(var(--size-board) / 12); }
+}
+@media (max-width: 360px) {
+  :root { --size-board: min(98vw, 300px); }
+}

@@ -1,0 +1,100 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<div class="staff-sanction-overlay" @onclick="OnBackdropClick">
+    <div class="staff-sanction-dialog card" @onclick:stopPropagation="true">
+        <h3 class="staff-sanction-title">اعمال تنبیه</h3>
+
+        <div class="form-group">
+            <label>نوع تنبیه</label>
+            <select class="input" @bind="sanctionType">
+                <option value="Warning">اخطار</option>
+                <option value="Mute">بی‌صدا</option>
+                <option value="TempBan">مسدود موقت</option>
+                <option value="PermBan">مسدود دائم</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>دلیل</label>
+            <input class="input" @bind="reason" placeholder="دلیل تنبیه..." />
+        </div>
+
+        @if (sanctionType == "TempBan" || sanctionType == "Mute")
+        {
+            <div class="form-group">
+                <label>مدت (روز)</label>
+                <input class="input" type="number" @bind="durationDays" min="1" max="365" />
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="staff-message staff-message-error">@errorMessage</div>
+        }
+
+        <div class="staff-action-buttons">
+            <button class="btn btn-danger" @onclick="ApplySanctionAction" disabled="@submitting">
+                @if (submitting) { <span>در حال اعمال...</span> } else { <span>اعمال تنبیه</span> }
+            </button>
+            <button class="btn btn-secondary" @onclick="OnClose">لغو</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid UserId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnApplied { get; set; }
+
+    private string sanctionType = "Warning";
+    private string reason = "";
+    private int durationDays = 7;
+    private bool submitting;
+    private string? errorMessage;
+
+    private void OnBackdropClick()
+    {
+        OnClose.InvokeAsync();
+    }
+
+    private async Task ApplySanctionAction()
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            errorMessage = "لطفاً دلیل تنبیه را وارد کنید.";
+            return;
+        }
+
+        submitting = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+
+            var req = new ApplySanctionRequest(Guid.Empty, UserId, sanctionType, reason,
+                (sanctionType == "TempBan" || sanctionType == "Mute") ? durationDays : (int?)null);
+
+            var resp = await http.PostAsJsonAsync("/api/staff/sanctions", req);
+            if (resp.IsSuccessStatusCode)
+            {
+                await OnApplied.InvokeAsync();
+            }
+            else
+            {
+                errorMessage = "خطا در اعمال تنبیه.";
+            }
+        }
+        catch
+        {
+            errorMessage = "خطا در اتصال به سرور.";
+        }
+
+        submitting = false;
+        StateHasChanged();
+    }
+}

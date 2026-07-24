@@ -1,0 +1,20 @@
+<div class="gr-header">
+    <div class="gr-players">
+        <span class="gr-player">@WhiteUsername <span class="gr-rating">(@WhiteRating)</span></span>
+        <span class="gr-vs">در برابر</span>
+        <span class="gr-player">@BlackUsername <span class="gr-rating">(@BlackRating)</span></span>
+    </div>
+    <div class="gr-result">
+        <span class="gr-result-text">@ResultText</span>
+        <span class="gr-result-reason">@ReasonText</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string WhiteUsername { get; set; } = "";
+    [Parameter] public int WhiteRating { get; set; }
+    [Parameter] public string BlackUsername { get; set; } = "";
+    [Parameter] public int BlackRating { get; set; }
+    [Parameter] public string ResultText { get; set; } = "";
+    [Parameter] public string ReasonText { get; set; } = "";
+}

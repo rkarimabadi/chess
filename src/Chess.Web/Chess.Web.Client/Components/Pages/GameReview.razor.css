@@ -1,0 +1,21 @@
+/* GameReview page scoped styles */
+.review-page {
+    max-width: 700px; margin: 0 auto;
+    display: flex; justify-content: center; align-items: flex-start;
+    min-height: 60vh; padding: var(--space-4);
+}
+.review-content {
+    width: 100%;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-5);
+}
+.review-board {
+    margin-bottom: var(--space-4);
+    display: flex; justify-content: center;
+}
+@media (max-width: 768px) {
+  .review-page { padding: var(--space-3); }
+  .review-content { padding: var(--space-4); }
+}

@@ -1,0 +1,97 @@
+@page "/auth/register"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>ثبت‌نام — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="auth-card card">
+        <h2>ثبت‌نام</h2>
+        <EditForm Model="model" OnValidSubmit="HandleRegister" FormName="register">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <InputText class="input" @bind-Value="model.Username" />
+                <ValidationMessage For="@(() => model.Username)" />
+            </div>
+            <div class="form-group">
+                <label>ایمیل</label>
+                <InputText class="input" type="email" @bind-Value="model.Email" />
+                <ValidationMessage For="@(() => model.Email)" />
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <InputText class="input" type="password" @bind-Value="model.Password" />
+                <ValidationMessage For="@(() => model.Password)" />
+            </div>
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="error-message">@error</div>
+            }
+            <button type="submit" class="btn btn-primary" style="width:100%" disabled="@isLoading">
+                @(isLoading ? "در حال ثبت‌نام..." : "ثبت‌نام") <i class="bi bi-person-plus-fill"></i>
+            </button>
+        </EditForm>
+        <div class="auth-links">
+            <a href="/auth/login">حساب دارید؟ ورود</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel model = new();
+    private string? error;
+    private bool isLoading;
+
+    private async Task HandleRegister()
+    {
+        error = null;
+        isLoading = true;
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.PostAsJsonAsync("/api/auth/register", model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Nav.NavigateTo("/auth/login");
+                return;
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            error = response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Conflict => "نام کاربری یا ایمیل قبلاً استفاده شده است",
+                System.Net.HttpStatusCode.TooManyRequests => "تعداد تلاش‌ها بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید",
+                _ => !string.IsNullOrWhiteSpace(body) ? body : "خطا در ثبت‌نام. لطفاً دوباره تلاش کنید"
+            };
+        }
+        catch
+        {
+            error = "خطا در اتصال به سرور";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class RegisterModel
+    {
+        [Required(ErrorMessage = "نام کاربری الزامی است")]
+        [MinLength(3, ErrorMessage = "نام کاربری باید حداقل ۳ کاراکتر باشد")]
+        [MaxLength(30, ErrorMessage = "نام کاربری نباید بیش از ۳۰ کاراکتر باشد")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "ایمیل الزامی است")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل صحیح نیست")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "رمز عبور الزامی است")]
+        [MinLength(6, ErrorMessage = "رمز عبور باید حداقل ۶ کاراکتر باشد")]
+        public string Password { get; set; } = "";
+    }
+}

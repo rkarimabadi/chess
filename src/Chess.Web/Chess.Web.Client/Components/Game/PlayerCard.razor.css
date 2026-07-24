@@ -1,0 +1,5 @@
+/* PlayerCard scoped styles */
+.player-card, .player-card-component { display: flex; align-items: center; gap: var(--space-3); }
+.player-info { display: flex; align-items: baseline; gap: var(--space-2); }
+.player-name { font-weight: 600; font-size: var(--text-headline); }
+.player-rating { color: var(--label-tertiary); font-size: var(--text-subhead); }

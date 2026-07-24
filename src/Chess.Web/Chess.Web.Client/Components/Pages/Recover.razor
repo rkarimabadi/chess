@@ -1,0 +1,31 @@
+@page "/auth/recover"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>بازیابی رمز — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="auth-card card">
+        <h2>بازیابی رمز عبور</h2>
+        <EditForm Model="model" OnValidSubmit="HandleRecover" FormName="recover">
+            <div class="form-group">
+                <label>ایمیل خود را وارد کنید</label>
+                <InputText class="input" type="email" @bind-Value="model.Email" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%"><i class="bi bi-envelope-fill"></i> ارسال لینک بازیابی</button>
+        </EditForm>
+        <div class="auth-links">
+            <a href="/auth/login">بازگشت به ورود</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RecoverModel model = new();
+
+    private void HandleRecover() { }
+
+    private class RecoverModel
+    {
+        public string Email { get; set; } = "";
+    }
+}

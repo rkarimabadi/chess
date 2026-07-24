@@ -1,0 +1,131 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+@if (Report is null)
+{
+    <div class="staff-empty">گزارشی انتخاب نشده.</div>
+}
+else
+{
+    <div class="staff-report-detail card">
+        <div class="staff-detail-header">
+            <h3>گزارش @Report.TargetUsername</h3>
+            <button class="btn btn-secondary" style="min-height:32px;font-size:var(--font-size-xs);" @onclick="OnClose">بازگشت</button>
+        </div>
+
+        <div class="staff-detail-body">
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">هدف:</span>
+                <span class="staff-user-link">@Report.TargetUsername</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">دلیل:</span>
+                <span>@Report.Reason</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">وضعیت:</span>
+                <span class="staff-badge @StatusClass(Report.Status)">@StatusLabel(Report.Status)</span>
+            </div>
+            <div class="staff-detail-row">
+                <span class="staff-detail-label">تاریخ:</span>
+                <span>@Report.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</span>
+            </div>
+        </div>
+
+        @if (Report.Status == "Open" && !resolved)
+        {
+            <div class="staff-report-actions">
+                <div class="form-group">
+                    <label>یادداشت (اختیاری)</label>
+                    <input class="input" @bind="resolveNote" placeholder="توضیحات..." />
+                </div>
+                <div class="staff-action-buttons">
+                    <button class="btn btn-primary" @onclick="Resolve" disabled="@submitting">
+                        @if (submitting) { <span>...</span> } else { <span>حل کردن</span> }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="Dismiss" disabled="@submitting">
+                        رد کردن
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (message != null)
+        {
+            <div class="staff-message @(isError ? "staff-message-error" : "staff-message-success")">@message</div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public ReportListItemDto? Report { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string resolveNote = "";
+    private bool submitting;
+    private bool resolved;
+    private string? message;
+    private bool isError;
+
+    private async Task Resolve()
+    {
+        await SubmitAction("resolve");
+    }
+
+    private async Task Dismiss()
+    {
+        await SubmitAction("dismiss");
+    }
+
+    private async Task SubmitAction(string action)
+    {
+        if (Report is null) return;
+        submitting = true;
+        message = null;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            var req = new ResolveReportRequest(action, resolveNote);
+            var resp = await http.PutAsJsonAsync($"/api/staff/reports/{Report.Id}", req);
+            if (resp.IsSuccessStatusCode)
+            {
+                resolved = true;
+                message = "گزارش با موفقیت به‌روزرسانی شد.";
+                isError = false;
+            }
+            else
+            {
+                message = "خطا در ارسال درخواست.";
+                isError = true;
+            }
+        }
+        catch
+        {
+            message = "خطا در اتصال به سرور.";
+            isError = true;
+        }
+
+        submitting = false;
+        StateHasChanged();
+    }
+
+    private static string StatusClass(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "staff-badge-warning",
+        "resolved" => "staff-badge-success",
+        "dismissed" => "staff-badge-muted",
+        _ => ""
+    };
+
+    private static string StatusLabel(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "باز",
+        "resolved" => "حل‌شده",
+        "dismissed" => "رد‌شده",
+        _ => status
+    };
+}

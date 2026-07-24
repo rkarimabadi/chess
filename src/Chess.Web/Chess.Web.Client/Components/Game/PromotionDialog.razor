@@ -1,0 +1,36 @@
+
+@if (Show)
+{
+    <div class="promotion-overlay">
+        <div class="promotion-dialog card">
+            <h4>انتخاب مهره ترفیع</h4>
+            <div class="promotion-choices">
+                @if (MyColor == "White")
+                {
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("Q"))">♕</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("R"))">♖</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("B"))">♗</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("N"))">♘</button>
+                }
+                else
+                {
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("Q"))">♛</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("R"))">♜</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("B"))">♝</button>
+                    <button class="btn btn-secondary" @onclick="@(() => Choose("N"))">♞</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback<string> OnChoose { get; set; }
+    [Parameter] public string MyColor { get; set; } = "White";
+
+    private async Task Choose(string piece)
+    {
+        await OnChoose.InvokeAsync(piece);
+    }
+}

@@ -1,0 +1,93 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<div class="staff-user-search">
+    <div class="staff-search-box">
+        <input class="input" @bind="query" @bind:event="oninput" @onkeydown="OnKeyDown"
+               placeholder="جست‌وجوی کاربر بر اساس نام کاربری یا ایمیل..." />
+        <button class="btn btn-primary" @onclick="Search" disabled="@loading">جست‌وجو</button>
+    </div>
+
+    @if (loading)
+    {
+        <div class="staff-loading-inline">
+            <div class="queue-spinner" style="width:24px;height:24px;"></div>
+        </div>
+    }
+    else if (results.Count > 0)
+    {
+        <div class="staff-search-results">
+            @foreach (var user in results)
+            {
+                <div class="staff-search-item" @onclick="() => OnSelectUser.InvokeAsync(user)">
+                    <div class="staff-search-item-info">
+                        <span class="staff-search-name">@user.Username</span>
+                        <span class="staff-search-email">@user.Email</span>
+                    </div>
+                    <div class="staff-search-item-meta">
+                        <span class="staff-badge @RoleBadgeClass(user.Role)">@RoleLabel(user.Role)</span>
+                        <span class="staff-search-rating">ریتینگ: @user.Rating</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (hasSearched)
+    {
+        <div class="staff-empty">کاربری یافت نشد.</div>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<UserDto> OnSelectUser { get; set; }
+
+    private string query = "";
+    private List<UserDto> results = new();
+    private bool loading;
+    private bool hasSearched;
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2) return;
+
+        loading = true;
+        hasSearched = true;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            results = await http.GetFromJsonAsync<List<UserDto>>($"/api/staff/users/search?q={Uri.EscapeDataString(query)}") ?? new();
+        }
+        catch
+        {
+            results = new();
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await Search();
+    }
+
+    private static string RoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "staff-badge-danger",
+        "Moderator" => "staff-badge-info",
+        _ => "staff-badge-muted"
+    };
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "Admin" => "ادمین",
+        "Moderator" => "ناظر",
+        "User" => "کاربر",
+        _ => role
+    };
+}

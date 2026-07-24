@@ -1,0 +1,12 @@
+
+<div class="player-card-component">
+    <div class="player-info">
+        <span class="player-name">@Username</span>
+        <span class="player-rating">(@Rating)</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Username { get; set; } = "";
+    [Parameter] public int Rating { get; set; }
+}

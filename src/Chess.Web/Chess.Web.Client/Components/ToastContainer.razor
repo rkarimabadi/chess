@@ -1,0 +1,58 @@
+@inject IJSRuntime JSRuntime
+
+<div class="swift-toast-container">
+    @foreach (var toast in toasts)
+    {
+        <div id="@toast.Id" class="swift-toast @toast.Type.ToString().ToLower()">
+            <div class="swift-toast-icon">
+                <i class="bi @toast.IconClass"></i>
+            </div>
+            <div class="swift-toast-message">@toast.Message</div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Models.ToastItem> toasts = new();
+
+    public void ShowToast(string message, Models.ToastType type = Models.ToastType.Success)
+    {
+        var toast = new Models.ToastItem
+        {
+            Id = "toast-" + Guid.NewGuid().ToString("N")[..8],
+            Message = message,
+            Type = type
+        };
+
+        toasts.Add(toast);
+        InvokeAsync(StateHasChanged);
+
+        // Show after render
+        _ = Task.Delay(50).ContinueWith(async _ =>
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval",
+                    $"document.getElementById('{toast.Id}')?.classList.add('show')");
+            }
+            catch { }
+        });
+
+        // Auto-remove after 3.5s
+        _ = Task.Delay(3500).ContinueWith(async _ =>
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval",
+                    $"document.getElementById('{toast.Id}')?.classList.remove('show')");
+                await Task.Delay(400);
+                await InvokeAsync(() =>
+                {
+                    toasts.RemoveAll(t => t.Id == toast.Id);
+                    StateHasChanged();
+                });
+            }
+            catch { }
+        });
+    }
+}

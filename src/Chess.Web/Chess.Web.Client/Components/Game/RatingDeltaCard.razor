@@ -1,0 +1,9 @@
+@if (Delta != 0)
+{
+    <span class="rating-delta @(Delta > 0 ? "rating-delta--positive" : "rating-delta--negative")">
+        @(Delta > 0 ? "+" : "")@Delta
+    </span>
+}
+@code {
+    [Parameter] public int Delta { get; set; }
+}

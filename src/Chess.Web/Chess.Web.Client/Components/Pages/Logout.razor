@@ -1,0 +1,41 @@
+@page "/auth/logout"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+
+<PageTitle>خروج — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="auth-card card" style="text-align:center">
+        <h2>خروج</h2>
+        @if (isLoggingOut)
+        {
+            <p>در حال خروج...</p>
+        }
+        else if (!string.IsNullOrEmpty(error))
+        {
+            <div class="error-message">@error</div>
+            <a href="/home" class="btn btn-primary" style="margin-top:1rem"><i class="bi bi-house"></i> بازگشت به خانه</a>
+        }
+    </div>
+</div>
+
+@code {
+    private bool isLoggingOut = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            await http.PostAsync("/api/auth/logout", null);
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch
+        {
+            isLoggingOut = false;
+            error = "خطا در خروج. لطفاً دوباره تلاش کنید.";
+        }
+    }
+}

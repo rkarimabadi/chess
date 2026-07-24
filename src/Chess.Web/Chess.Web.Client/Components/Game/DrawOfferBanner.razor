@@ -1,0 +1,28 @@
+
+@if (Show)
+{
+    <div class="draw-banner">
+        <div class="draw-banner-text">
+            <i class="bi bi-handshake"></i>
+            <span>پیشنهاد تساوی</span>
+        </div>
+        <div class="draw-banner-actions">
+            <button class="draw-btn draw-btn--accept" @onclick="Accept">
+                <i class="bi bi-check-lg"></i>
+                پذیرش
+            </button>
+            <button class="draw-btn draw-btn--decline" @onclick="Decline">
+                <i class="bi bi-x-lg"></i>
+                رد
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback<bool> OnRespond { get; set; }
+
+    private async Task Accept() => await OnRespond.InvokeAsync(true);
+    private async Task Decline() => await OnRespond.InvokeAsync(false);
+}

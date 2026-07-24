@@ -1,0 +1,21 @@
+.gh-card {
+    display: flex; flex-direction: column;
+    padding: var(--space-4);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+.gh-card:hover { transform: translateY(-1px); }
+.gh-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: var(--space-2);
+}
+.gh-opponent { font-weight: 600; font-size: var(--text-headline); }
+.gh-rating { font-size: var(--text-caption1); color: var(--label-tertiary); }
+.gh-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.gh-badges { display: flex; gap: var(--space-2); align-items: center; }
+.gh-time { font-size: var(--text-caption1); color: var(--label-tertiary); }

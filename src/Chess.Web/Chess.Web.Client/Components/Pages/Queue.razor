@@ -1,0 +1,239 @@
+@page "/play/queue"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+
+<PageTitle>صف بازی — شطرنج آنلاین</PageTitle>
+
+<div class="queue-page">
+    @if (status == "idle")
+    {
+        <QueueOptionsCard Title="انتخاب نوع بازی">
+            <div class="form-group">
+                <label>کنترل زمانی</label>
+                <select class="input" @bind="selectedTimeControl">
+                    <option value="bullet">بولت (۱+۰)</option>
+                    <option value="blitz" selected>بلیتز (۳+۲)</option>
+                    <option value="rapid">رپید (۱۰+۵)</option>
+                    <option value="classic">کلاسیک (۶۰+۰)</option>
+                    <option value="untimed">بدون ساعت (آزاد)</option>
+                </select>
+            </div>
+            <div class="rated-toggle" style="display: flex; flex-direction: row;">
+                <label class="toggle" style="margin-left: 10px;">
+                    <input type="checkbox" @bind="isRated" />
+                    <span class="toggle-slider"></span>
+                </label>
+                <div class="rated-toggle-info">
+                    <span class="rated-toggle-label">بازی ریتینگ‌دار</span>
+                    <span class="rated-toggle-desc">نتیجه روی ریتینگ شما تأثیر می‌گذارد</span>
+                </div>
+
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:var(--space-4);" @onclick="JoinQueue">
+                <i class="bi bi-search"></i> جست‌وجوی حریف
+            </button>
+            <div style="text-align:center;margin-top:var(--space-5);">
+                <a href="/rooms" style="font-size:var(--text-caption1);color:var(--label-secondary);"><i class="bi bi-door-open"></i> یا به یک اتاق بپیوندید</a>
+            </div>
+        </QueueOptionsCard>
+    }
+    else if (status == "connecting")
+    {
+        <QueueConnectingCard OnCancel="CancelQueue" />
+    }
+    else if (status == "searching")
+    {
+        <QueueSearchingCard ElapsedTime="@elapsedTime" TimeControlLabel="@selectedTimeControlLabel" IsRated="@isRated" OnCancel="CancelQueue" />
+    }
+    else if (true || status == "error")
+    {
+        <QueueErrorCard ErrorMessage="@errorMessage" OnRetry="Reconnect" />
+    }
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private string status = "idle";
+    private string errorMessage = "";
+    private string elapsedTime = "00:00";
+    private System.Timers.Timer? timer;
+    private int seconds = 0;
+
+    private string selectedTimeControl = "blitz";
+    private bool isRated = true;
+
+    private string selectedTimeControlLabel => selectedTimeControl.ToLowerInvariant() switch
+    {
+        "bullet" => "بولت",
+        "blitz" => "بلیتز",
+        "rapid" => "رپید",
+        "classic" => "کلاسیک",
+        "untimed" => "آزاد",
+        _ => selectedTimeControl
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConnectToHub();
+    }
+
+    private async Task ConnectToHub()
+    {
+        status = "idle";
+        errorMessage = "";
+        StateHasChanged();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/game"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string, int>("QueueJoined", (queueId, estimatedWait) =>
+        {
+            status = "searching";
+            StartTimer();
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On("QueueLeft", () =>
+        {
+            status = "idle";
+            StopTimer();
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, Guid, string>("MatchFound", (roomId, opponentId, timeControl) =>
+        {
+            StopTimer();
+            Nav.NavigateTo($"/game/{roomId}");
+        });
+
+        hubConnection.On<string>("RematchAccepted", (newGameId) =>
+        {
+            Nav.NavigateTo($"/game/{newGameId}");
+        });
+
+        try
+        {
+            await hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            status = "error";
+            errorMessage = ex.Message;
+            StateHasChanged();
+        }
+    }
+
+    private async Task JoinQueue()
+    {
+        // Check auth before joining
+        if (!await IsAuthenticated())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+
+        // Ensure hub is connected
+        if (hubConnection?.State != HubConnectionState.Connected)
+        {
+            try
+            {
+                if (hubConnection is not null)
+                    await hubConnection.DisposeAsync();
+                await ConnectToHub();
+            }
+            catch { }
+        }
+
+        if (hubConnection?.State == HubConnectionState.Connected)
+        {
+            status = "connecting";
+            StateHasChanged();
+            try
+            {
+                await hubConnection.SendAsync("JoinMatchmakingQueue", selectedTimeControl, isRated);
+            }
+            catch (Exception ex)
+            {
+                status = "error";
+                errorMessage = ex.Message;
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            status = "error";
+            errorMessage = "اتصال به سرور برقرار نشد. لطفاً دوباره تلاش کنید.";
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> IsAuthenticated()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task CancelQueue()
+    {
+        if (hubConnection?.State == HubConnectionState.Connected)
+        {
+            await hubConnection.SendAsync("LeaveMatchmakingQueue");
+        }
+        StopTimer();
+        status = "idle";
+        StateHasChanged();
+    }
+
+    private async Task Reconnect()
+    {
+        StopTimer();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+        await ConnectToHub();
+    }
+
+    private void StartTimer()
+    {
+        seconds = 0;
+        elapsedTime = "00:00";
+        timer = new System.Timers.Timer(1000);
+        timer.Elapsed += (s, e) =>
+        {
+            seconds++;
+            var min = seconds / 60;
+            var sec = seconds % 60;
+            elapsedTime = $"{min:D2}:{sec:D2}";
+            InvokeAsync(StateHasChanged);
+        };
+        timer.Start();
+    }
+
+    private void StopTimer()
+    {
+        timer?.Stop();
+        timer?.Dispose();
+        timer = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        StopTimer();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

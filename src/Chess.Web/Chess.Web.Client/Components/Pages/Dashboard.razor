@@ -1,0 +1,16 @@
+@page "/home"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>خانه — شطرنج آنلاین</PageTitle>
+
+<div class="dashboard">
+    <h2>داشبورد</h2>
+    <div class="dashboard-grid">
+        <QuickPlayCard Icon="bi-lightning-charge-fill" Title="بازی سریع" Description="در صف بازی تصادفی قرار بگیرید">
+            <a href="/play/queue" class="btn btn-primary btn-block"><i class="bi bi-play-fill"></i> شروع بازی</a>
+        </QuickPlayCard>
+        <InviteFriendCard Icon="bi-person-plus-fill" Title="بازی با دوست" Description="اتاق بسازید و لینک دعوت بفرستید">
+            <a href="/rooms/create" class="btn btn-secondary btn-block"><i class="bi bi-link-45deg"></i> ساخت اتاق</a>
+        </InviteFriendCard>
+    </div>
+</div>

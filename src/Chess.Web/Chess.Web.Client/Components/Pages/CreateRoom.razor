@@ -1,0 +1,124 @@
+@page "/rooms/create"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+
+<PageTitle>ایجاد اتاق — شطرنج آنلاین</PageTitle>
+
+<div class="create-room-page">
+    <QueueOptionsCard Title="ایجاد اتاق بازی">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <div class="form-group">
+            <label>کنترل زمانی</label>
+            <select class="input" @bind="selectedTimeControl">
+                <option value="bullet">بولت (۱+۰)</option>
+                <option value="blitz" selected>بلیتز (۳+۲)</option>
+                <option value="rapid">رپید (۱۰+۵)</option>
+                <option value="classic">کلاسیک (۶۰+۰)</option>
+                <option value="untimed">بدون ساعت (آزاد)</option>
+            </select>
+        </div>
+
+        <div class="rated-toggle">
+            <label class="toggle" style="margin-left: 10px;">
+                <input type="checkbox" @bind="isRated" />
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="rated-toggle-info">
+                <span class="rated-toggle-label">بازی ریتینگ‌دار</span>
+                <span class="rated-toggle-desc">نتیجه روی ریتینگ شما تأثیر می‌گذارد</span>
+            </div>
+
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;margin-top:var(--space-4);" @onclick="Create" disabled="@isLoading">
+            @if (isLoading)
+            {
+                <span>در حال ایجاد...</span>
+            }
+            else
+            {
+                <span><i class="bi bi-plus-lg"></i> ایجاد اتاق</span>
+            }
+        </button>
+
+        <div style="text-align:center;margin-top:var(--space-5);">
+            <a href="/rooms" style="font-size:var(--text-caption1);color:var(--label-secondary);"><i class="bi bi-arrow-right"></i> بازگشت به لیست اتاق‌ها</a>
+        </div>
+    </QueueOptionsCard>
+</div>
+
+@code {
+    private string selectedTimeControl = "blitz";
+    private bool isRated = true;
+    private bool isLoading = false;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await CheckAuthState())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+    }
+
+    private async Task<bool> CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task Create()
+    {
+        isLoading = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var req = new
+            {
+                TimeControl = selectedTimeControl,
+                IsRated = isRated,
+                ColorPreference = (string?)null
+            };
+            var resp = await http.PostAsJsonAsync("/api/rooms", req);
+            if (resp.IsSuccessStatusCode)
+            {
+                var result = await resp.Content.ReadFromJsonAsync<CreateRoomResult>();
+                if (result != null)
+                {
+                    Nav.NavigateTo($"/rooms/{result.RoomId}");
+                    return;
+                }
+            }
+            errorMessage = "خطا در ایجاد اتاق. لطفاً دوباره تلاش کنید.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private class CreateRoomResult
+    {
+        public Guid RoomId { get; set; }
+        public string InviteCode { get; set; } = "";
+    }
+}

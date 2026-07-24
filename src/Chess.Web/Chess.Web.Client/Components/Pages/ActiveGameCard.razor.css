@@ -1,0 +1,23 @@
+.ag-card {
+    display: flex; flex-direction: column;
+    padding: var(--space-4);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    border-left: 3px solid var(--color-blue);
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+.ag-card:hover { transform: translateY(-1px); }
+.ag-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: var(--space-2);
+}
+.ag-opponent { font-weight: 600; font-size: var(--text-headline); }
+.ag-rating { font-size: var(--text-caption1); color: var(--label-tertiary); }
+.ag-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.ag-meta { display: flex; gap: var(--space-2); align-items: center; }
+.ag-moves { font-size: var(--text-caption1); color: var(--label-tertiary); }
+.ag-time { font-size: var(--text-caption1); color: var(--label-tertiary); }

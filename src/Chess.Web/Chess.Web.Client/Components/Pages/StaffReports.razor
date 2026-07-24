@@ -1,0 +1,33 @@
+@page "/staff/reports"
+@rendermode InteractiveWebAssembly
+@layout StaffLayout
+@using Chess.Application.DTOs
+
+<PageTitle>گزارش‌ها — پنل کارکنان</PageTitle>
+
+<div class="staff-page">
+    <h2 class="staff-page-title">گزارش‌ها</h2>
+
+    @if (selectedReport is not null)
+    {
+        <ReportDetail Report="@selectedReport" OnClose="CloseReport" />
+    }
+    else
+    {
+        <ReportsQueue OnViewReport="ViewReport" />
+    }
+</div>
+
+@code {
+    private ReportListItemDto? selectedReport;
+
+    private void ViewReport(ReportListItemDto report)
+    {
+        selectedReport = report;
+    }
+
+    private void CloseReport()
+    {
+        selectedReport = null;
+    }
+}

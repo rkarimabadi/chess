@@ -1,0 +1,115 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<div class="staff-reports-queue">
+    <div class="staff-filter-bar">
+        <select class="input" @bind="selectedStatus" @bind:after="OnFilterChanged">
+            <option value="">همه وضعیت‌ها</option>
+            <option value="Open">باز</option>
+            <option value="Resolved">حل‌شده</option>
+            <option value="Dismissed">رد‌شده</option>
+        </select>
+    </div>
+
+    @if (loading)
+    {
+        <div class="staff-loading-inline">
+            <div class="queue-spinner" style="width:24px;height:24px;"></div>
+        </div>
+    }
+    else if (reports.Count == 0)
+    {
+        <div class="staff-empty">گزارشی یافت نشد.</div>
+    }
+    else
+    {
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>هدف</th>
+                    <th>دلیل</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var report in reports)
+                {
+                    <tr>
+                        <td><span class="staff-user-link">@report.TargetUsername</span></td>
+                        <td>@report.Reason</td>
+                        <td><span class="staff-badge @StatusClass(report.Status)">@StatusLabel(report.Status)</span></td>
+                        <td class="staff-date">@report.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                        <td>
+                            <button class="btn btn-secondary" style="font-size:var(--font-size-xs);min-height:32px;padding:var(--spacing-xs) var(--spacing-sm);"
+                                    @onclick="() => OnViewReport.InvokeAsync(report)">مشاهده</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<ReportListItemDto> OnViewReport { get; set; }
+
+    private List<ReportListItemDto> reports = new();
+    private bool loading = true;
+    private string selectedStatus = "";
+    private int currentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            var url = $"/api/staff/reports?page={currentPage}";
+            if (!string.IsNullOrEmpty(selectedStatus))
+                url += $"&status={selectedStatus}";
+
+            var result = await http.GetFromJsonAsync<PagedResult<ReportListItemDto>>(url);
+            reports = result?.Items ?? new();
+        }
+        catch
+        {
+            reports = new();
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnFilterChanged()
+    {
+        currentPage = 1;
+        await LoadReports();
+    }
+
+    private static string StatusClass(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "staff-badge-warning",
+        "resolved" => "staff-badge-success",
+        "dismissed" => "staff-badge-muted",
+        _ => ""
+    };
+
+    private static string StatusLabel(string status) => status.ToLowerInvariant() switch
+    {
+        "open" => "باز",
+        "resolved" => "حل‌شده",
+        "dismissed" => "رد‌شده",
+        _ => status
+    };
+}

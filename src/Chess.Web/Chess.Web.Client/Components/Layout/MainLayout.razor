@@ -1,0 +1,36 @@
+@inherits LayoutComponentBase
+@rendermode InteractiveWebAssembly
+@inject ToastService Toast
+@implements IDisposable
+
+<div class="main-layout">
+    <NavMenu />
+    <main class="main-content">
+        @Body
+    </main>
+    <BottomNav />
+</div>
+
+<ToastContainer @ref="toastContainer" />
+
+@code {
+    private ToastContainer? toastContainer;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && toastContainer != null)
+        {
+            Toast.OnShowToast += HandleToast;
+        }
+    }
+
+    private void HandleToast(string message, Models.ToastType type)
+    {
+        toastContainer?.ShowToast(message, type);
+    }
+
+    public void Dispose()
+    {
+        Toast.OnShowToast -= HandleToast;
+    }
+}

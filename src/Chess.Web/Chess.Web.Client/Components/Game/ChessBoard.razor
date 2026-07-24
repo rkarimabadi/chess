@@ -1,0 +1,241 @@
+<div class="chess-board @(MyColor == "Black" ? "board-flipped" : "")" @onkeydown="HandleKeyDown" tabindex="0">
+    @* File labels (a-h) *@
+    <div class="board-coordinates board-coordinates-bottom">
+        @for (int file = 0; file < 8; file++)
+        {
+            var displayFile = MyColor == "Black" ? (char)('h' - file) : (char)('a' + file);
+            <span class="coord-label">@displayFile</span>
+        }
+    </div>
+
+    <div class="board-squares-area">
+        @* Rank labels (1-8) *@
+        <div class="board-coordinates board-coordinates-left">
+            @for (int rank = 7; rank >= 0; rank--)
+            {
+                var displayRank = MyColor == "Black" ? (8 - rank) : (rank + 1);
+                <span class="coord-label">@displayRank</span>
+            }
+        </div>
+
+        <div class="board-grid">
+            @for (int rank = 7; rank >= 0; rank--)
+            {
+                @for (int file = 0; file < 8; file++)
+                {
+                    var sq = $"{(char)('a' + file)}{rank + 1}";
+                    var isLight = (file + rank) % 2 == 0;
+                    var isSelected = selectedSquare == sq;
+                    var isLegalTarget = legalTargets.Contains(sq);
+                    var isLastMove = lastMoveFrom == sq || lastMoveTo == sq;
+                    var isInCheck = IsCheck && IsKingOnSquare(sq);
+
+                    <div class="square @(isLight ? "square-light" : "square-dark")
+                                @(isSelected ? "square-selected" : "")
+                                @(isLegalTarget ? "square-legal-move" : "")
+                                @(isLastMove ? "square-last-move" : "")
+                                @(isInCheck ? "square-check" : "")"
+                         @onclick="() => HandleSquareClick(sq)"
+                         draggable="true"
+                         @ondragstart="() => HandleDragStart(sq)"
+                         @ondrop="() => HandleDrop(sq)"
+                         aria-label="@GetAriaLabel(sq)">
+                        @GetPieceSymbol(sq)
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string BoardState { get; set; } = "";
+    [Parameter] public bool IsMyTurn { get; set; }
+    [Parameter] public bool IsCheck { get; set; }
+    [Parameter] public EventCallback<(string From, string To)> OnMove { get; set; }
+    [Parameter] public string MyColor { get; set; } = "White";
+    [Parameter] public string? LastMoveFrom { get; set; }
+    [Parameter] public string? LastMoveTo { get; set; }
+
+    private string? selectedSquare;
+    private HashSet<string> legalTargets = new();
+    private string? lastMoveFrom => LastMoveFrom;
+    private string? lastMoveTo => LastMoveTo;
+    private string? dragFrom;
+
+    private Dictionary<string, string> pieceMap = new()
+    {
+        ["K"] = "♔", ["Q"] = "♕", ["R"] = "♖", ["B"] = "♗", ["N"] = "♘", ["P"] = "♙",
+        ["k"] = "♚", ["q"] = "♛", ["r"] = "♜", ["b"] = "♝", ["n"] = "♞", ["p"] = "♟"
+    };
+
+    private string GetPieceSymbol(string square)
+    {
+        var pieces = ParseFen(BoardState);
+        return pieces.TryGetValue(square, out var p) ? pieceMap.GetValueOrDefault(p, "") : "";
+    }
+
+    private Dictionary<string, string> ParseFen(string fen)
+    {
+        var result = new Dictionary<string, string>();
+        var parts = fen.Split(' ');
+        var ranks = parts[0].Split('/');
+        for (int r = 0; r < 8; r++)
+        {
+            int file = 0;
+            foreach (char c in ranks[r])
+            {
+                if (char.IsDigit(c)) { file += c - '0'; }
+                else
+                {
+                    var sq = $"{(char)('a' + file)}{8 - r}";
+                    result[sq] = c.ToString();
+                    file++;
+                }
+            }
+        }
+        return result;
+    }
+
+    private async Task HandleSquareClick(string square)
+    {
+        if (!IsMyTurn) return;
+
+        var pieces = ParseFen(BoardState);
+
+        if (selectedSquare is null)
+        {
+            if (pieces.TryGetValue(square, out var p))
+            {
+                bool isMyPiece = (MyColor == "White" && char.IsUpper(p[0])) ||
+                                 (MyColor == "Black" && char.IsLower(p[0]));
+                if (isMyPiece)
+                {
+                    selectedSquare = square;
+                    legalTargets = CalculateLegalTargets(square, pieces);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            if (selectedSquare == square) { selectedSquare = null; legalTargets.Clear(); return; }
+            await OnMove.InvokeAsync((selectedSquare, square));
+            selectedSquare = null;
+            legalTargets.Clear();
+        }
+    }
+
+    private void HandleDragStart(string square) => dragFrom = square;
+
+    private async Task HandleDrop(string square)
+    {
+        if (dragFrom is not null && dragFrom != square)
+        {
+            await OnMove.InvokeAsync((dragFrom, square));
+        }
+        dragFrom = null;
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+    }
+
+    private string GetAriaLabel(string square)
+    {
+        var pieces = ParseFen(BoardState);
+        return pieces.TryGetValue(square, out var p) ? $"خانه {square} — مهره {p}" : $"خانه {square} — خالی";
+    }
+
+    private HashSet<string> CalculateLegalTargets(string square, Dictionary<string, string> pieces)
+    {
+        var targets = new HashSet<string>();
+        if (!pieces.TryGetValue(square, out var pieceChar)) return targets;
+
+        int file = square[0] - 'a';
+        int rank = square[1] - '1';
+        char piece = char.ToLower(pieceChar[0]);
+        bool isWhite = char.IsUpper(pieceChar[0]);
+
+        switch (piece)
+        {
+            case 'p':
+                int dir = isWhite ? 1 : -1;
+                int startRank = isWhite ? 1 : 6;
+                var fwd = $"{(char)('a' + file)}{rank + dir + 1}";
+                if (rank + dir >= 0 && rank + dir <= 7 && !pieces.ContainsKey(fwd))
+                    targets.Add(fwd);
+                if (rank == startRank)
+                {
+                    var dbl = $"{(char)('a' + file)}{rank + 2 * dir + 1}";
+                    if (!pieces.ContainsKey(dbl) && !pieces.ContainsKey(fwd))
+                        targets.Add(dbl);
+                }
+                foreach (int df in new[] { -1, 1 })
+                {
+                    int nf = file + df;
+                    if (nf >= 0 && nf <= 7)
+                    {
+                        var cap = $"{(char)('a' + nf)}{rank + dir + 1}";
+                        if (pieces.ContainsKey(cap))
+                        {
+                            bool isEnemy = (isWhite && char.IsLower(pieces[cap][0])) || (!isWhite && char.IsUpper(pieces[cap][0]));
+                            if (isEnemy) targets.Add(cap);
+                        }
+                    }
+                }
+                break;
+            case 'n':
+                foreach (var (df, dr) in new[] {(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)})
+                {
+                    int nf = file+df, nr = rank+dr;
+                    if (nf>=0 && nf<=7 && nr>=0 && nr<=7) targets.Add($"{(char)('a'+nf)}{nr+1}");
+                }
+                break;
+            case 'b':
+                foreach (var (df, dr) in new[] {(-1,-1),(-1,1),(1,-1),(1,1)}) AddSlidingTargets(targets, pieces, file, rank, df, dr, isWhite);
+                break;
+            case 'r':
+                foreach (var (df, dr) in new[] {(-1,0),(1,0),(0,-1),(0,1)}) AddSlidingTargets(targets, pieces, file, rank, df, dr, isWhite);
+                break;
+            case 'q':
+                foreach (var (df, dr) in new[] {(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)}) AddSlidingTargets(targets, pieces, file, rank, df, dr, isWhite);
+                break;
+            case 'k':
+                foreach (var (df, dr) in new[] {(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)})
+                {
+                    int nf = file+df, nr = rank+dr;
+                    if (nf>=0 && nf<=7 && nr>=0 && nr<=7) targets.Add($"{(char)('a'+nf)}{nr+1}");
+                }
+                break;
+        }
+        return targets;
+    }
+
+    private void AddSlidingTargets(HashSet<string> targets, Dictionary<string, string> pieces, int file, int rank, int df, int dr, bool isWhite)
+    {
+        for (int i = 1; i < 8; i++)
+        {
+            int nf = file + df * i, nr = rank + dr * i;
+            if (nf < 0 || nf > 7 || nr < 0 || nr > 7) break;
+            var sq = $"{(char)('a' + nf)}{nr + 1}";
+            if (pieces.TryGetValue(sq, out var p))
+            {
+                bool isEnemy = (isWhite && char.IsLower(p[0])) || (!isWhite && char.IsUpper(p[0]));
+                if (isEnemy) targets.Add(sq);
+                break;
+            }
+            targets.Add(sq);
+        }
+    }
+
+    private bool IsKingOnSquare(string square)
+    {
+        if (!IsCheck) return false;
+        var pieces = ParseFen(BoardState);
+        if (!pieces.TryGetValue(square, out var p)) return false;
+        bool isMyKing = (MyColor == "White" && p == "K") || (MyColor == "Black" && p == "k");
+        bool isOpponentKing = (MyColor == "White" && p == "k") || (MyColor == "Black" && p == "K");
+        return isMyKing || isOpponentKing;
+    }
+}

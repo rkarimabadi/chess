@@ -1,0 +1,24 @@
+.room-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--space-4);
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+.room-card:hover { transform: translateY(-1px); }
+.rc-top { display: flex; flex-direction: column; gap: var(--space-1); }
+.rc-tc { font-weight: 600; font-size: var(--text-headline); }
+.rc-badges { display: flex; gap: var(--space-2); align-items: center; }
+.rc-time { font-size: var(--text-caption1); color: var(--label-tertiary); }
+.rc-join { flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .room-card {
+    flex-direction: column; gap: var(--space-3);
+    padding: var(--space-4);
+  }
+  .rc-top { width: 100%; }
+  .rc-badges { justify-content: space-between; }
+  .rc-join { width: 100%; }
+}

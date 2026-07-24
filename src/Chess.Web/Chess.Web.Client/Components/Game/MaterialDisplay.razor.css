@@ -1,0 +1,4 @@
+/* MaterialDisplay scoped styles */
+.material-display { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.captured-pieces { display: flex; gap: 2px; }
+.captured-piece { font-size: var(--text-headline); }

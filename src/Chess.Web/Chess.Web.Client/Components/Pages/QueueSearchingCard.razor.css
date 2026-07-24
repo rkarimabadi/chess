@@ -1,0 +1,50 @@
+.qsc-card {
+  text-align: center;
+  background: var(--background-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-6) var(--space-5);
+  min-width: 280px; max-width: 520px; width: 100%;
+  box-shadow: var(--shadow-md);
+  animation: qscFadeIn 0.3s ease-out;
+}
+@keyframes qscFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.qsc-card h3 {
+  font-size: var(--text-headline); font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+.qsc-meta {
+  color: var(--label-secondary);
+  font-size: var(--text-subhead);
+  margin-bottom: var(--space-2);
+}
+.qsc-icon-circle {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto var(--space-4);
+  background: rgba(94,114,228,.1);
+  color: var(--color-blue);
+  animation: qscPulse 2s ease-in-out infinite;
+}
+@keyframes qscPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: .8; }
+}
+.qsc-timer {
+  font-size: 48px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-blue);
+  margin: var(--space-4) 0 var(--space-5);
+  letter-spacing: -1px;
+}
+@media (max-width: 768px) {
+  .qsc-card { max-width: 100%; padding: var(--space-5) var(--space-4); }
+  .qsc-timer { font-size: 36px; }
+}
+@media (max-width: 480px) {
+  .qsc-timer { font-size: 32px; }
+}

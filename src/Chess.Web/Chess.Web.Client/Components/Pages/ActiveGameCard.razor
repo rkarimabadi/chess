@@ -1,0 +1,24 @@
+<div class="ag-card" @onclick="OnClick">
+    <div class="ag-top">
+        <div class="ag-opponent">@OpponentUsername</div>
+        <span class="ag-rating">@OpponentRating</span>
+    </div>
+    <div class="ag-bottom">
+        <div class="ag-meta">
+            <span class="badge @(IsRated ? "badge-rated" : "badge-casual")">@(IsRated ? "ریتینگ" : "دوستانه")</span>
+            <span class="badge badge-casual">@TimeControl</span>
+            <span class="ag-moves">@MoveCount حرکت</span>
+        </div>
+        <span class="ag-time">@TimeAgo</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string OpponentUsername { get; set; } = "";
+    [Parameter] public int OpponentRating { get; set; }
+    [Parameter] public string TimeControl { get; set; } = "";
+    [Parameter] public bool IsRated { get; set; }
+    [Parameter] public int MoveCount { get; set; }
+    [Parameter] public string TimeAgo { get; set; } = "";
+    [Parameter] public EventCallback OnClick { get; set; }
+}

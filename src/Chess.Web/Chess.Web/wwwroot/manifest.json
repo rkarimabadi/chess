@@ -1,0 +1,33 @@
+{
+    "name": "شطرنج آنلاین — بازی PvP منصفانه",
+    "short_name": "شطرنج",
+    "description": "پلتفرم بازی شطرنج آنلاین PvP فارسی",
+    "dir": "rtl",
+    "lang": "fa-IR",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#F8F9FA",
+    "theme_color": "#2C5F8A",
+    "categories": ["games", "entertainment"],
+    "icons": [
+        { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    ],
+    "shortcuts": [
+        {
+            "name": "بازی کن",
+            "short_name": "بازی",
+            "url": "/play/queue",
+            "description": "ورود به صف بازی"
+        },
+        {
+            "name": "پروفایل",
+            "short_name": "پروفایل",
+            "url": "/dashboard",
+            "description": "مشاهده پروفایل و رتبه‌بندی"
+        }
+    ]
+}

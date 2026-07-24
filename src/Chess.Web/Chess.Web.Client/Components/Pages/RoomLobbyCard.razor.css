@@ -1,0 +1,120 @@
+.rl-lobby {
+    width: 100%; min-width: 280px; max-width: 520px;
+    display: flex; flex-direction: column;
+}
+
+/* Header */
+.rl-header {
+    padding-bottom: var(--space-3); margin-bottom: var(--space-4);
+    border-bottom: 1px solid var(--separator);
+}
+.rl-header-row {
+    display: flex; align-items: center; gap: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+.rl-icon {
+    width: 40px; height: 40px; border-radius: var(--radius-lg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+    background: rgba(94,114,228,.12); color: var(--color-blue);
+}
+.rl-title { font-size: var(--text-headline); font-weight: 600; margin: 0; }
+.rl-meta { display: flex; align-items: center; gap: var(--space-2); }
+.rl-tc { font-size: var(--text-subhead); color: var(--label-secondary); }
+
+/* Players */
+.rl-players {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--space-5); margin-bottom: var(--space-4);
+}
+.rl-player {
+    display: flex; flex-direction: column; align-items: center;
+    gap: var(--space-2); padding: var(--space-4);
+    border-radius: var(--radius-md); min-width: 140px;
+    background: var(--fill);
+    transition: background var(--duration-fast) var(--ease-out);
+}
+.rl-player--self {
+    background: rgba(94,114,228,.08);
+    border: 1px solid rgba(94,114,228,.2);
+}
+.rl-player-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--background-secondary);
+    color: var(--label-secondary); font-size: 1.2rem;
+}
+.rl-player-avatar--empty { opacity: .4; }
+.rl-player-name { font-weight: 600; font-size: var(--text-body); }
+.rl-player-name--muted { color: var(--label-tertiary); font-weight: 400; }
+.rl-vs { font-size: var(--text-caption1); color: var(--label-tertiary); font-weight: 600; }
+
+/* Share link */
+.rl-share {
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background: var(--fill); border-radius: var(--radius-md);
+}
+.rl-share-header {
+    display: flex; align-items: center; gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-subhead); color: var(--label-secondary);
+}
+.rl-share-header i { color: var(--color-blue); font-size: 1rem; }
+.rl-share-box {
+    display: flex; align-items: center;
+    background: var(--background-secondary);
+    border: 1px solid var(--separator);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.rl-share-url {
+    flex: 1; min-width: 0;
+    padding: var(--space-3) var(--space-3);
+    font-size: var(--text-caption1); color: var(--label);
+    font-family: monospace; direction: ltr; text-align: left;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: thin;
+}
+.rl-share-btn {
+    flex-shrink: 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-blue); color: #fff;
+    border: none; cursor: pointer;
+    font-size: 1rem;
+    transition: background var(--duration-fast) var(--ease-out);
+    display: flex; align-items: center; justify-content: center;
+}
+.rl-share-btn:hover { background: var(--primary-dark); }
+.rl-share-btn:active { transform: scale(0.95); }
+
+/* Actions */
+.rl-actions { display: flex; gap: var(--space-3); justify-content: center; }
+.rl-waiting { color: var(--label-tertiary); font-size: var(--text-subhead); margin: 0; }
+
+/* Start notice */
+.rl-start-notice {
+    display: flex; align-items: center; justify-content: center; gap: var(--space-3);
+    padding: var(--space-4); margin-top: var(--space-4);
+    background: rgba(94,114,228,.08); border-radius: var(--radius-md);
+}
+.rl-start-notice p { margin: 0; color: var(--color-blue); font-weight: 500; }
+.rl-spinner-sm {
+    width: 20px; height: 20px;
+    border: 2px solid var(--fill); border-top-color: var(--color-blue);
+    border-radius: 50%; animation: rlSpin 0.8s linear infinite; flex-shrink: 0;
+}
+
+@keyframes rlSpin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rl-lobby { min-width: 0; max-width: 100%; }
+  .rl-players { flex-direction: column; gap: var(--space-3); }
+  .rl-vs { display: none; }
+  .rl-player { min-width: auto; width: 100%; }
+  .rl-actions { flex-direction: column; }
+}
+@media (max-width: 480px) {
+  .rl-player { padding: var(--space-3); }
+}

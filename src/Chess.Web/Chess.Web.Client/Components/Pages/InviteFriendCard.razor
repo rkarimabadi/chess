@@ -1,0 +1,15 @@
+<div class="card invite-friend">
+    <div class="if-header mb-2">
+        <div class="if-icon"><i class="bi @Icon"></i></div>
+        <h4 class="if-title">@Title</h4>    
+    </div>
+    <p class="if-desc mb-4">@Description</p>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "bi-person-plus-fill";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

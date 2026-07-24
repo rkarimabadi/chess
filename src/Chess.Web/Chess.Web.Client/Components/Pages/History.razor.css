@@ -1,0 +1,7 @@
+/* History scoped styles */
+.history-page { margin: 0 auto; }
+.history-page h2 { font-size: var(--text-title1); font-weight: 700; margin-bottom: var(--space-5); }
+.history-list { display: flex; flex-direction: column; gap: var(--space-3); }
+@media (max-width: 768px) {
+  .history-page { padding: 0 var(--space-4); }
+}

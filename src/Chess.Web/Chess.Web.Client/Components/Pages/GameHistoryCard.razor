@@ -1,0 +1,23 @@
+<div class="gh-card" @onclick="OnClick">
+    <div class="gh-top">
+        <div class="gh-opponent">@OpponentUsername</div>
+        <span class="gh-rating">@OpponentRating</span>
+    </div>
+    <div class="gh-bottom">
+        <div class="gh-badges">
+            <span class="badge @ResultBadgeClass">@ResultText</span>
+            <span class="badge badge-casual">@Variant</span>
+        </div>
+        <span class="gh-time">@TimeAgo</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string OpponentUsername { get; set; } = "";
+    [Parameter] public int OpponentRating { get; set; }
+    [Parameter] public string ResultText { get; set; } = "";
+    [Parameter] public string ResultBadgeClass { get; set; } = "badge-casual";
+    [Parameter] public string Variant { get; set; } = "";
+    [Parameter] public string TimeAgo { get; set; } = "";
+    [Parameter] public EventCallback OnClick { get; set; }
+}

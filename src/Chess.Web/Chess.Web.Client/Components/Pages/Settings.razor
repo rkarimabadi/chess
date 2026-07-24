@@ -1,0 +1,111 @@
+@page "/settings"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+
+<PageTitle>تنظیمات — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="card auth-card">
+        <h2>تنظیمات</h2>
+
+        <div class="settings-section">
+            <h3>ظاهر</h3>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" @bind="darkMode" @bind:after="SaveTheme" />
+                    حالت تاریک
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>صدا</h3>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" @bind="soundEnabled" @bind:after="SaveSound" />
+                    فعال‌سازی صدا
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>حساب کاربری</h3>
+            <div class="form-group">
+                <button class="btn btn-danger" @onclick="ConfirmDeactivate"><i class="bi bi-person-x"></i> غیرفعال‌سازی حساب</button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <p class="@(success ? "text-success" : "text-danger")">@message</p>
+        }
+    </div>
+</div>
+
+@code {
+    private bool darkMode = false;
+    private bool soundEnabled = true;
+    private string message = "";
+    private bool success = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await CheckAuthState())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+        darkMode = await JSRuntime.InvokeAsync<bool>("eval", "localStorage.getItem('theme') === 'dark'");
+        soundEnabled = await JSRuntime.InvokeAsync<bool>("eval", "localStorage.getItem('soundEnabled') !== 'false'");
+    }
+
+    private async Task<bool> CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task SaveTheme()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", $"localStorage.setItem('theme', '{(darkMode ? "dark" : "light")}')");
+        await JSRuntime.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme', '{(darkMode ? "dark" : "light")}')");
+    }
+
+    private async Task SaveSound()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", $"localStorage.setItem('soundEnabled', '{(soundEnabled ? "true" : "false")}')");
+    }
+
+    private async Task ConfirmDeactivate()
+    {
+        message = "";
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var resp = await http.PostAsync("/api/users/me/deactivate", null);
+            if (resp.IsSuccessStatusCode)
+            {
+                success = true;
+                message = "حساب شما غیرفعال شد.";
+            }
+            else
+            {
+                success = false;
+                message = "خطا در غیرفعال‌سازی حساب.";
+            }
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            message = ex.Message;
+        }
+    }
+
+}

@@ -1,0 +1,160 @@
+@page "/profile"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+
+<PageTitle>پروفایل — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="card auth-card">
+        <h2>پروفایل من</h2>
+
+        @if (loading)
+        {
+            <p>در حال بارگذاری...</p>
+        }
+        else if (profile is not null)
+        {
+            <div class="profile-info">
+                <div class="profile-field">
+                    <label>نام کاربری</label>
+                    <span>@profile.Username</span>
+                </div>
+                <div class="profile-field">
+                    <label>ایمیل</label>
+                    <span>@profile.Email</span>
+                </div>
+                <div class="profile-field">
+                    <label>ریتینگ</label>
+                    <span>@profile.Rating</span>
+                </div>
+                <div class="profile-field">
+                    <label>تعداد بازی‌ها</label>
+                    <span>@profile.GamesPlayed</span>
+                </div>
+                <div class="profile-field">
+                    <label>نقش</label>
+                    <span>@profile.Role</span>
+                </div>
+                <div class="profile-field">
+                    <label>تاریخ عضویت</label>
+                    <span>@profile.CreatedAt.ToString("yyyy/MM/dd")</span>
+                </div>
+            </div>
+
+            <div style="margin-top:var(--spacing-lg);">
+                <h3>تغییر رمز عبور</h3>
+                <div class="form-group">
+                    <label>رمز عبور فعلی</label>
+                    <input type="password" class="input" @bind="oldPassword" />
+                </div>
+                <div class="form-group">
+                    <label>رمز عبور جدید</label>
+                    <input type="password" class="input" @bind="newPassword" />
+                </div>
+                <button class="btn btn-primary" @onclick="ChangePassword" disabled="@isChangingPassword">
+                    @(isChangingPassword ? "در حال تغییر..." : "تغییر رمز") <i class="bi bi-key-fill"></i>
+                </button>
+                @if (!string.IsNullOrEmpty(passwordMessage))
+                {
+                    <p class="@(passwordSuccess ? "text-success" : "text-danger")">@passwordMessage</p>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-danger">@errorMessage</p>
+        }
+    </div>
+</div>
+
+@code {
+    private ProfileData? profile;
+    private bool loading = true;
+    private string errorMessage = "";
+
+    private string oldPassword = "";
+    private string newPassword = "";
+    private bool isChangingPassword = false;
+    private string passwordMessage = "";
+    private bool passwordSuccess = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await CheckAuthState())
+        {
+            Nav.NavigateTo("/auth/login", forceLoad: true);
+            return;
+        }
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            profile = await http.GetFromJsonAsync<ProfileData>("/api/users/me");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "خطا در بارگذاری پروفایل: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task<bool> CheckAuthState()
+    {
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var http = new HttpClient(handler) { BaseAddress = new Uri(Nav.BaseUri) };
+            var response = await http.GetAsync("/api/users/me");
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (string.IsNullOrWhiteSpace(oldPassword) || string.IsNullOrWhiteSpace(newPassword)) return;
+        isChangingPassword = true;
+        passwordMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var resp = await http.PutAsJsonAsync("/api/users/me/password", new { OldPassword = oldPassword, NewPassword = newPassword });
+            if (resp.IsSuccessStatusCode)
+            {
+                passwordSuccess = true;
+                passwordMessage = "رمز عبور با موفقیت تغییر کرد.";
+                oldPassword = "";
+                newPassword = "";
+            }
+            else
+            {
+                passwordSuccess = false;
+                passwordMessage = "خطا در تغییر رمز عبور.";
+            }
+        }
+        catch (Exception ex)
+        {
+            passwordSuccess = false;
+            passwordMessage = ex.Message;
+        }
+        finally
+        {
+            isChangingPassword = false;
+            StateHasChanged();
+        }
+    }
+
+    private class ProfileData
+    {
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int Rating { get; set; }
+        public int GamesPlayed { get; set; }
+        public string Role { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+}

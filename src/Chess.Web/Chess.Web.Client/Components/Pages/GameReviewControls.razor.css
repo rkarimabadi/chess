@@ -1,0 +1,11 @@
+.gr-controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+.gr-counter {
+    font-size: var(--text-subhead);
+    color: var(--label-secondary);
+    min-width: 100px;
+    text-align: center;
+}

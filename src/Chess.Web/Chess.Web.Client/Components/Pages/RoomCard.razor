@@ -1,0 +1,26 @@
+<div class="room-card">
+    <div class="rc-top">
+        <div class="rc-tc">@TimeControl</div>
+        <div class="rc-badges">
+            @if (IsRated)
+            {
+                <span class="badge badge-rated">ریتینگ</span>
+            }
+            else
+            {
+                <span class="badge badge-casual">دوستانه</span>
+            }
+            <span class="rc-time">@TimeAgo</span>
+        </div>
+    </div>
+    <button class="btn btn-primary rc-join" @onclick="OnJoin">
+        <i class="bi bi-box-arrow-in-left"></i> پیوستن
+    </button>
+</div>
+
+@code {
+    [Parameter] public string TimeControl { get; set; } = "";
+    [Parameter] public bool IsRated { get; set; }
+    [Parameter] public string TimeAgo { get; set; } = "";
+    [Parameter] public EventCallback OnJoin { get; set; }
+}

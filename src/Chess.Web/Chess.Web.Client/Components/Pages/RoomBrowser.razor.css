@@ -1,0 +1,25 @@
+/* RoomBrowser scoped styles */
+.rooms-page { margin: 0 auto; }
+.rooms-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: var(--space-5);
+}
+.rooms-header h2 { font-size: var(--text-title1); font-weight: 700; margin: 0; }
+.room-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.rl-load-more { display: flex; justify-content: center; padding: var(--space-5) 0; }
+.rl-spinner-sm {
+    width: 28px; height: 28px;
+    border: 2px solid var(--fill);
+    border-top-color: var(--color-blue);
+    border-radius: 50%;
+    animation: rlSpin 0.8s linear infinite;
+}
+@keyframes rlSpin { to { transform: rotate(360deg); } }
+.rl-sentinel { height: 1px; }
+.rl-end {
+    text-align: center; color: var(--label-tertiary);
+    font-size: var(--text-caption1); padding: var(--space-5) 0; margin: 0;
+}
+@media (max-width: 768px) {
+  .rooms-header { flex-direction: row; gap: var(--space-3); }
+}

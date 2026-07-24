@@ -1,0 +1,29 @@
+/* BottomNav scoped styles */
+/* NOTE: ::deep required for NavLink child components */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--background-secondary);
+  border-top: 1px solid var(--separator);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 8px 0 calc(8px + var(--safe-bottom));
+  height: 64px; z-index: 100;
+}
+@media (prefers-color-scheme: dark) {
+  .bottom-nav { background: #343a40; border-top-color: #495057; }
+}
+::deep .bottom-nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; color: var(--label-secondary); text-decoration: none;
+  transition: color 0.2s; min-height: 44px;
+  border-radius: 8px;
+}
+::deep .bottom-nav-item:hover {
+  color: var(--label);
+  background: var(--fill);
+}
+::deep .bottom-nav-item.active { color: var(--color-blue); }
+.bottom-nav-icon { font-size: 20px; margin-bottom: 2px; }
+.bottom-nav-label { font-size: 11px; font-weight: 500; }
+@media (min-width: 769px) {
+  .bottom-nav { display: none; }
+}

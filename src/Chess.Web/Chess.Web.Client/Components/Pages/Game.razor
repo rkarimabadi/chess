@@ -1,0 +1,501 @@
+@page "/game/{GameId}"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+@inject GameStateService GameState
+@inject ISoundService Sound
+@inject ToastService Toast
+@implements IAsyncDisposable
+@using Chess.Web.Client.Models
+
+<PageTitle>بازی شطرنج</PageTitle>
+
+<ConnectionOverlay State="@connectionState" ErrorMessage="@errorMessage"
+                   OnRetry="Reconnect" />
+
+@if (connectionState == "connected")
+{
+    <div class="game-page">
+        <div class="game-layout">
+            <div class="game-opponent">
+                <PlayerCard Username="@opponentName" Rating="@opponentRating" />
+                <Clock TimeMs="@opponentTimeMs" IsLow="@IsOpponentClockLow" />
+            </div>
+
+            <div class="board-area">
+                <GameStatusIndicator IsCheck="@isCheck" IsMyTurn="@isMyTurn" />
+                <div class="board-container @boardShakeClass">
+                    <ChessBoard BoardState="@boardFen" IsMyTurn="@isMyTurn" IsCheck="@isCheck" OnMove="HandleMove" LastMoveFrom="@lastMoveFrom" LastMoveTo="@lastMoveTo" MyColor="@myColor" />
+                </div>
+                <MaterialDisplay CapturedByWhite="@capturedByWhite" CapturedByBlack="@capturedByBlack" />
+            </div>
+
+            <div class="game-self">
+                <Clock TimeMs="@myTimeMs" IsLow="@IsMyClockLow" />
+                <PlayerCard Username="@myName" Rating="@myRating" />
+            </div>
+
+            <div class="game-sidebar">
+                <MoveList Moves="@moves" />
+                <PresetChat OnSendPreset="HandleSendPreset" ReceivedMessages="@receivedMessages" />
+                <GameActions DrawOfferSent="@drawOfferSent"
+                             OnOfferDraw="OfferDraw"
+                             OnConfirmResign="ConfirmResign" />
+            </div>
+        </div>
+    </div>
+
+    <PromotionDialog Show="@showPromotion" OnChoose="HandlePromotionChoice" MyColor="@myColor" />
+
+    <DrawOfferBanner Show="@showDrawBanner" OnRespond="HandleDrawResponse" />
+
+    <ResultOverlay Show="@gameOver" ResultText="@resultText" ReasonText="@reasonText" MyRatingDelta="@ratingDelta" IsWin="@isWin" IsDraw="@isDraw" OnGoHome="GoHome" />
+}
+
+@code {
+    [Parameter] public string GameId { get; set; } = "";
+
+    private string connectionState = "connecting";
+    private string errorMessage = "";
+
+    // Game state
+    private string boardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    private bool isMyTurn = false;
+    private bool isCheck = false;
+    private string myColor = "";
+    private Guid myUserId = Guid.Empty;
+
+    // Players
+    private string myName = "شما";
+    private int myRating = 1200;
+    private string opponentName = "حریف";
+    private int opponentRating = 1200;
+
+    // Clocks
+    private long myTimeMs = 300000;
+    private long opponentTimeMs = 300000;
+    private bool IsMyClockLow => myTimeMs < 30000;
+    private bool IsOpponentClockLow => opponentTimeMs < 30000;
+    private System.Timers.Timer? clockTimer;
+
+    // Moves
+    private List<string> moves = new();
+    private int lastMoveCount = 0;
+
+    // Preset messages
+    private List<string> receivedMessages = new();
+    private string? lastMoveFrom;
+    private string? lastMoveTo;
+
+    // Material
+    private List<string> capturedByWhite = new();
+    private List<string> capturedByBlack = new();
+
+    // Draw
+    private bool drawOfferSent = false;
+    private bool showDrawBanner = false;
+    private Guid drawOfferedBy = Guid.Empty;
+
+    // Promotion
+    private bool showPromotion = false;
+    private string promotionFrom = "";
+    private string promotionTo = "";
+
+    // Game over
+    private bool gameOver = false;
+    private string resultText = "";
+    private string reasonText = "";
+    private int? ratingDelta = null;
+    private bool isWin = false;
+    private bool isDraw = false;
+
+    // Board shake
+    private string boardShakeClass = "";
+    private System.Threading.Timer? shakeTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RegisterServiceHandlers();
+        await ConnectToHub();
+    }
+
+    private void RegisterServiceHandlers()
+    {
+        GameState.OnGameStateChanged += dto =>
+        {
+            ApplyGameState(dto);
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnMoveRejected += (reason, dto) =>
+        {
+            ApplyGameState(dto);
+            TriggerBoardShake();
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnCheckDetected += checkedSide =>
+        {
+            isCheck = true;
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnGameFinished += dto =>
+        {
+            ApplyGameResult(dto);
+            StopClockTimer();
+            InvokeAsync(StateHasChanged);
+            _ = Sound.PlayGameOverAsync();
+        };
+
+        GameState.OnDrawOffered += offeredBy =>
+        {
+            drawOfferedBy = offeredBy;
+            showDrawBanner = true;
+            Toast.Show($"{opponentName} پیشنهاد تساوی داد", ToastType.Info);
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnDrawResponded += (accepted, respondedById, reason) =>
+        {
+            drawOfferSent = false;
+            if (!accepted)
+            {
+                Toast.Show(reason ?? "پیشنهاد تساوی رد شد", ToastType.Warning);
+            }
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnOpponentDisconnected += secondsLeft =>
+        {
+            Toast.Show($"حریف اتصالش قطع شد، انتظار اتصال مجدد تا {secondsLeft} ثانیه", ToastType.Warning);
+        };
+
+        GameState.OnOpponentReconnected += () =>
+        {
+            Toast.Show("حریف مجدداً متصل شد", ToastType.Success);
+        };
+
+        GameState.OnPresetMessage += (senderId, messageKey) =>
+        {
+            var label = messageKey switch
+            {
+                "hello" => "سلام!",
+                "good_game" => "بازی خوبی بود",
+                "thanks" => "ممنون",
+                "well_played" => "خوب بازی کردی",
+                "bye" => "خداحافظ",
+                "nice_move" => "حرکت خوبی بود",
+                "good_luck" => "موفق باشی",
+                "wait" => "صبر کن",
+                "hurry" => "عجله کن",
+                "bravo" => "آفرین",
+                _ => messageKey
+            };
+            var sender = senderId == myUserId ? "شما" : opponentName;
+            receivedMessages.Add($"{sender}: {label}");
+
+            if (senderId != myUserId)
+            {
+                Toast.Show($"{opponentName}: {label}", ToastType.Info);
+            }
+
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnRematchOffered += offeredBy =>
+        {
+            InvokeAsync(StateHasChanged);
+        };
+
+        GameState.OnRematchAccepted += newGameId =>
+        {
+            Nav.NavigateTo($"/game/{newGameId}");
+        };
+    }
+
+    private async Task ConnectToHub()
+    {
+        connectionState = "connecting";
+        StateHasChanged();
+
+        try
+        {
+            await GameState.ConnectAsync();
+            await GameState.JoinGameAsync(Guid.Parse(GameId));
+            connectionState = "connected";
+            StartClockTimer();
+        }
+        catch (Exception ex)
+        {
+            connectionState = "error";
+            errorMessage = ex.Message;
+        }
+
+        StateHasChanged();
+    }
+
+    private void ApplyGameState(GameStateDto dto)
+    {
+        boardFen = dto.BoardFen;
+
+        if (string.IsNullOrEmpty(myColor))
+        {
+            myColor = dto.CallerColor;
+            // Load existing moves on initial join
+            if (dto.Moves.Count > 0 && moves.Count == 0)
+            {
+                moves.AddRange(dto.Moves);
+                lastMoveCount = dto.MoveCount;
+            }
+        }
+
+        if (myColor == "White")
+        {
+            myTimeMs = dto.WhiteTimeMs;
+            opponentTimeMs = dto.BlackTimeMs;
+        }
+        else
+        {
+            myTimeMs = dto.BlackTimeMs;
+            opponentTimeMs = dto.WhiteTimeMs;
+        }
+
+        if (myUserId == Guid.Empty)
+        {
+            myUserId = myColor == "White" ? dto.White.Id : dto.Black.Id;
+        }
+
+        if (myColor == "White")
+        {
+            myName = dto.White?.Username ?? "شما";
+            myRating = dto.White?.Rating ?? 1200;
+            opponentName = dto.Black?.Username ?? "حریف";
+            opponentRating = dto.Black?.Rating ?? 1200;
+        }
+        else
+        {
+            myName = dto.Black?.Username ?? "شما";
+            myRating = dto.Black?.Rating ?? 1200;
+            opponentName = dto.White?.Username ?? "حریف";
+            opponentRating = dto.White?.Rating ?? 1200;
+        }
+
+        isMyTurn = dto.CurrentTurn == myColor;
+        isCheck = false;
+
+        lastMoveFrom = dto.LastMoveFrom;
+        lastMoveTo = dto.LastMoveTo;
+
+        if (dto.MoveCount > lastMoveCount)
+        {
+            // Use server-provided SAN notation for new moves
+            for (int i = lastMoveCount; i < dto.MoveCount && i < dto.Moves.Count; i++)
+            {
+                moves.Add(dto.Moves[i]);
+            }
+            lastMoveCount = dto.MoveCount;
+            _ = Sound.PlayMoveAsync();
+        }
+
+        if (dto.Material?.CapturedByWhite != null)
+            capturedByWhite = dto.Material.CapturedByWhite;
+        if (dto.Material?.CapturedByBlack != null)
+            capturedByBlack = dto.Material.CapturedByBlack;
+    }
+
+    private string GenerateMoveNotation(int moveIndex, GameStateDto dto)
+    {
+        var moveNum = (moveIndex / 2) + 1;
+        var isWhite = moveIndex % 2 == 0;
+        return isWhite ? $"{moveNum}." : $"{moveNum}...";
+    }
+
+    private void ApplyGameResult(GameResultDto dto)
+    {
+        gameOver = true;
+        var result = dto.Result ?? "";
+        var reason = dto.Reason ?? "";
+
+        resultText = result switch
+        {
+            "WhiteWins" => "برد سفید",
+            "BlackWins" => "برد سیاه",
+            "Draw" => "تساوی",
+            _ => "پایان بازی"
+        };
+
+        // Determine if I won, lost, or drew
+        isWin = (myColor == "White" && result == "WhiteWins") ||
+                (myColor == "Black" && result == "BlackWins");
+        isDraw = result == "Draw";
+        if (isWin) resultText = "پیروزی!";
+        else if (isDraw) resultText = "تساوی";
+        else resultText = "شکست";
+
+        reasonText = reason switch
+        {
+            "Checkmate" => "کیش‌مات",
+            "Stalemate" => "بن‌بست",
+            "Resignation" => "تسلیم",
+            "Agreement" => "توافق",
+            "Timeout" => "اتمام زمان",
+            "Disconnect" => "قطع اتصال",
+            _ => reason
+        };
+
+        if (myColor == "White" && dto.WhiteRating != null)
+            ratingDelta = dto.WhiteRating.Delta;
+        else if (myColor == "Black" && dto.BlackRating != null)
+            ratingDelta = dto.BlackRating.Delta;
+    }
+
+    private async Task HandleMove((string From, string To) move)
+    {
+        if (!GameState.IsConnected) return;
+        if (!isMyTurn) return;
+
+        if (IsPromotionMove(move.From, move.To))
+        {
+            promotionFrom = move.From;
+            promotionTo = move.To;
+            showPromotion = true;
+            StateHasChanged();
+            return;
+        }
+
+        await GameState.SendMoveAsync(GameId, move.From, move.To);
+    }
+
+    private bool IsPromotionMove(string from, string to)
+    {
+        var piece = GetPieceAtSquare(from);
+        if (piece != 'P' && piece != 'p') return false;
+
+        if (piece == 'P' && from[1] == '7' && to[1] == '8') return true;
+        if (piece == 'p' && from[1] == '2' && to[1] == '1') return true;
+
+        return false;
+    }
+
+    private char GetPieceAtSquare(string square)
+    {
+        var pieces = ParseFenForPieces(boardFen);
+        return pieces.TryGetValue(square, out var p) ? p : ' ';
+    }
+
+    private Dictionary<string, char> ParseFenForPieces(string fen)
+    {
+        var result = new Dictionary<string, char>();
+        var parts = fen.Split(' ');
+        var ranks = parts[0].Split('/');
+        for (int r = 0; r < 8; r++)
+        {
+            int file = 0;
+            foreach (char c in ranks[r])
+            {
+                if (char.IsDigit(c)) { file += c - '0'; }
+                else
+                {
+                    var sq = $"{(char)('a' + file)}{8 - r}";
+                    result[sq] = c;
+                    file++;
+                }
+            }
+        }
+        return result;
+    }
+
+    private async Task HandlePromotionChoice(string piece)
+    {
+        showPromotion = false;
+        if (GameState.IsConnected)
+        {
+            await GameState.SendMoveAsync(GameId, promotionFrom, promotionTo, piece);
+        }
+    }
+
+    private async Task OfferDraw()
+    {
+        if (!GameState.IsConnected) return;
+        drawOfferSent = true;
+        await GameState.OfferDrawAsync(GameId);
+        StateHasChanged();
+    }
+
+    private async Task HandleDrawResponse(bool accept)
+    {
+        showDrawBanner = false;
+        if (GameState.IsConnected)
+        {
+            await GameState.RespondDrawAsync(GameId, accept);
+        }
+        StateHasChanged();
+    }
+
+    private async Task ConfirmResign()
+    {
+        if (!GameState.IsConnected) return;
+        await GameState.ResignAsync(GameId);
+    }
+
+    private async Task HandleSendPreset(string messageKey)
+    {
+        if (GameState.IsConnected)
+        {
+            await GameState.SendPresetMessageAsync(GameId, messageKey);
+        }
+    }
+
+    private async Task Reconnect()
+    {
+        await GameState.DisconnectAsync();
+        await ConnectToHub();
+    }
+
+    private void StartClockTimer()
+    {
+        clockTimer = new System.Timers.Timer(1000);
+        clockTimer.Elapsed += (s, e) =>
+        {
+            if (isMyTurn && myTimeMs > 0)
+            {
+                myTimeMs -= 1000;
+            }
+            else if (!isMyTurn && opponentTimeMs > 0)
+            {
+                opponentTimeMs -= 1000;
+            }
+            InvokeAsync(StateHasChanged);
+        };
+        clockTimer.Start();
+    }
+
+    private void StopClockTimer()
+    {
+        clockTimer?.Stop();
+        clockTimer?.Dispose();
+        clockTimer = null;
+    }
+
+    private void GoHome()
+    {
+        Nav.NavigateTo("/");
+    }
+
+    private void TriggerBoardShake()
+    {
+        boardShakeClass = "board-shake";
+        shakeTimer?.Dispose();
+        shakeTimer = new System.Threading.Timer(_ =>
+        {
+            boardShakeClass = "";
+            InvokeAsync(StateHasChanged);
+        }, null, 500, System.Threading.Timeout.Infinite);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        StopClockTimer();
+        await GameState.DisconnectAsync();
+    }
+}

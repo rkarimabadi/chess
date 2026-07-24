@@ -1,0 +1,8 @@
+/* RatingDeltaCard scoped styles */
+.rating-delta {
+  font-size: var(--text-title3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rating-delta--positive { color: var(--color-green); }
+.rating-delta--negative { color: var(--color-red); }

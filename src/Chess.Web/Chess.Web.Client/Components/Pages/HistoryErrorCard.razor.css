@@ -1,0 +1,34 @@
+.hs-card {
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--space-6) var(--space-5);
+    min-width: 280px; max-width: 520px; width: 100%;
+    box-shadow: var(--shadow-md);
+    animation: hsFadeIn 0.3s ease-out;
+    margin: auto;
+}
+@keyframes hsFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+.hs-icon-circle {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    margin: 0 auto var(--space-4);
+}
+.hs-icon-circle--error {
+    background: rgba(220,53,69,.1);
+    color: var(--color-red);
+}
+.hs-error-msg {
+    color: var(--label-secondary);
+    font-size: var(--text-subhead);
+    margin-bottom: var(--space-5);
+    word-break: break-word;
+}
+@media (max-width: 768px) {
+  .hs-card { min-width: 280px; max-width: 100%; padding: var(--space-5) var(--space-4); }
+}

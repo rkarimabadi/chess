@@ -1,0 +1,33 @@
+@page "/staff/users"
+@rendermode InteractiveWebAssembly
+@layout StaffLayout
+@using Chess.Application.DTOs
+
+<PageTitle>کاربران — پنل کارکنان</PageTitle>
+
+<div class="staff-page">
+    <h2 class="staff-page-title">کاربران</h2>
+
+    @if (selectedUserId.HasValue)
+    {
+        <UserDossier UserId="@selectedUserId.Value" OnClose="CloseDossier" />
+    }
+    else
+    {
+        <UserSearch OnSelectUser="SelectUser" />
+    }
+</div>
+
+@code {
+    private Guid? selectedUserId;
+
+    private void SelectUser(UserDto user)
+    {
+        selectedUserId = user.Id;
+    }
+
+    private void CloseDossier()
+    {
+        selectedUserId = null;
+    }
+}

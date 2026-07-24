@@ -1,0 +1,16 @@
+<div class="game-actions">
+    <button class="action-btn action-btn--draw @(DrawOfferSent ? "action-btn--pending" : "")" @onclick="OnOfferDraw">
+        <i class="bi @(DrawOfferSent ? "bi-hourglass-split" : "bi-handshake")"></i>
+        <span>@(DrawOfferSent ? "در انتظار پاسخ..." : "پیشنهاد تساوی")</span>
+    </button>
+    <button class="action-btn action-btn--resign" @onclick="OnConfirmResign">
+        <i class="bi bi-flag"></i>
+        <span>تسلیم</span>
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool DrawOfferSent { get; set; }
+    [Parameter] public EventCallback OnOfferDraw { get; set; }
+    [Parameter] public EventCallback OnConfirmResign { get; set; }
+}

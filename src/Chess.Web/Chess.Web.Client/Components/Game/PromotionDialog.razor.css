@@ -1,0 +1,10 @@
+/* PromotionDialog scoped styles */
+.promotion-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.promotion-dialog { text-align: center; }
+.promotion-dialog h4 { margin-bottom: var(--space-4); font-size: var(--text-headline); font-weight: 600; }
+.promotion-choices { display: flex; gap: var(--space-3); justify-content: center; }
+.promotion-choices .btn { font-size: 2rem; min-width: 64px; min-height: 64px; border-radius: var(--radius-md); }

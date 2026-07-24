@@ -1,0 +1,12 @@
+/* GameResult scoped styles */
+.result-page { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
+.result-card { text-align: center; width: 100%; max-width: 520px; }
+.result-card h2 { font-size: var(--text-title1); margin-bottom: var(--space-3); font-weight: 700; }
+.result-card p { color: var(--label-secondary); margin-bottom: var(--space-4); }
+.rating-changes { margin-bottom: var(--space-5); }
+.rating-delta { font-size: var(--text-title3); font-weight: 700; }
+.rating-delta.positive { color: var(--color-green); }
+.rating-delta.negative { color: var(--color-red); }
+@media (max-width: 768px) {
+  .result-card { max-width: 100%; }
+}

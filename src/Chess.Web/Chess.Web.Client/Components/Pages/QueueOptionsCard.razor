@@ -1,0 +1,12 @@
+<div class="card queue-options-card">
+    <div class="qoc-header">
+        <div class="qoc-icon"><i class="bi bi-controller"></i></div>
+        <h4 class="qoc-title">@Title</h4>
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

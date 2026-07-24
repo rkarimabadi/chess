@@ -1,0 +1,86 @@
+@page "/rooms/join/{InviteCode}"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Nav
+
+<PageTitle>پیوستن به اتاق — شطرنج آنلاین</PageTitle>
+
+<div class="auth-page">
+    <div class="card auth-card" style="text-align:center;">
+        @if (isLoading)
+        {
+            <p>در حال پیوستن به اتاق...</p>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="text-danger">@errorMessage</p>
+            <a href="/rooms" class="btn btn-secondary" style="margin-top:var(--spacing-md);"><i class="bi bi-arrow-right"></i> بازگشت به لیست اتاق‌ها</a>
+        }
+        else
+        {
+            <p>شما با موفقیت به اتاق پیوستید!</p>
+            <p style="color:var(--color-text-muted);">در حال انتقال به اتاق...</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string InviteCode { get; set; } = "";
+
+    private bool isLoading = true;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Join();
+    }
+
+    private async Task Join()
+    {
+        isLoading = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var req = new { InviteCode = InviteCode };
+            var resp = await http.PostAsJsonAsync("/api/rooms/join", req);
+
+            if (resp.IsSuccessStatusCode)
+            {
+                var result = await resp.Content.ReadFromJsonAsync<JoinResult>();
+                if (result != null)
+                {
+                    Nav.NavigateTo($"/rooms/{result.RoomId}");
+                    return;
+                }
+            }
+
+            // Parse error message from server
+            var errorBody = await resp.Content.ReadAsStringAsync();
+            if (errorBody.Contains("not available") || errorBody.Contains("Room is not available"))
+                errorMessage = "اتاق دیگر در دسترس نیست (بسته شده یا بازی شروع شده).";
+            else if (errorBody.Contains("not found"))
+                errorMessage = "اتاق یافت نشد.";
+            else if (errorBody.Contains("Cannot join your own room"))
+                errorMessage = "شما نمی‌توانید به اتاق خودتان بپیوندید.";
+            else
+                errorMessage = "خطا در پیوستن به اتاق. ممکن است اتاق پر یا بسته شده باشد.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private class JoinResult
+    {
+        public Guid RoomId { get; set; }
+        public string OpponentUsername { get; set; } = "";
+    }
+}

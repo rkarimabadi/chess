@@ -1,0 +1,122 @@
+<div class="card rl-lobby">
+    <div class="rl-header">
+        <div class="rl-header-row">
+            <div class="rl-icon"><i class="bi bi-door-open-fill"></i></div>
+            <h4 class="rl-title">اتاق بازی</h4>
+        </div>
+        <div class="rl-meta">
+            <span class="rl-tc">@TimeControl</span>
+            @if (IsRated)
+            {
+                <span class="badge badge-rated">ریتینگ</span>
+            }
+            else
+            {
+                <span class="badge badge-casual">دوستانه</span>
+            }
+        </div>
+    </div>
+
+    <div class="rl-players">
+        <div class="rl-player @(IsHost ? "rl-player--self" : "")">
+            <div class="rl-player-avatar">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <span class="rl-player-name">@HostName</span>
+            @if (HostReady)
+            {
+                <span class="badge badge-ready">آماده</span>
+            }
+        </div>
+        <span class="rl-vs">در مقابل</span>
+        <div class="rl-player @(IsGuest ? "rl-player--self" : "")">
+            @if (HasGuest)
+            {
+                <div class="rl-player-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <span class="rl-player-name">@GuestName</span>
+                @if (GuestReady)
+                {
+                    <span class="badge badge-ready">آماده</span>
+                }
+            }
+            else
+            {
+                <div class="rl-player-avatar rl-player-avatar--empty">
+                    <i class="bi bi-person"></i>
+                </div>
+                <span class="rl-player-name rl-player-name--muted">در انتظار حریف...</span>
+            }
+        </div>
+    </div>
+
+    @if (IsHost && !HasGuest)
+    {
+        <div class="rl-share">
+            <div class="rl-share-header">
+                <i class="bi bi-link-45deg"></i>
+                <span>لینک دعوت را برای حریف بفرستید</span>
+            </div>
+            <div class="rl-share-box">
+                <span class="rl-share-url" title="@RoomUrl">@RoomUrl</span>
+                <button class="rl-share-btn" @onclick="OnCopyLink">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+            </div>
+        </div>
+    }
+
+    <div class="rl-actions">
+        @if (!HasGameStarted)
+        {
+            @if (CanReady)
+            {
+                <button class="btn @(AmReady ? "btn-secondary" : "btn-primary")" @onclick="OnToggleReady" disabled="@AmReady">
+                    @if (AmReady)
+                    {
+                        <span><i class="bi bi-check-circle-fill"></i> آماده هستید</span>
+                    }
+                    else
+                    {
+                        <span><i class="bi bi-check-lg"></i> آماده‌ام</span>
+                    }
+                </button>
+            }
+            else
+            {
+                <p class="rl-waiting">منتظر پیوستن حریف...</p>
+            }
+        }
+        <button class="btn btn-secondary" @onclick="OnLeave">
+            <i class="bi bi-box-arrow-right"></i> خروج از اتاق
+        </button>
+    </div>
+
+    @if (HasGameStarted)
+    {
+        <div class="rl-start-notice">
+            <div class="rl-spinner-sm"></div>
+            <p>بازی شروع شد! در حال انتقال...</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string TimeControl { get; set; } = "";
+    [Parameter] public bool IsRated { get; set; }
+    [Parameter] public string HostName { get; set; } = "میزبان";
+    [Parameter] public string GuestName { get; set; } = "حریف";
+    [Parameter] public bool IsHost { get; set; }
+    [Parameter] public bool IsGuest { get; set; }
+    [Parameter] public bool HasGuest { get; set; }
+    [Parameter] public bool HostReady { get; set; }
+    [Parameter] public bool GuestReady { get; set; }
+    [Parameter] public bool AmReady { get; set; }
+    [Parameter] public bool CanReady { get; set; }
+    [Parameter] public bool HasGameStarted { get; set; }
+    [Parameter] public string RoomUrl { get; set; } = "";
+    [Parameter] public EventCallback OnToggleReady { get; set; }
+    [Parameter] public EventCallback OnLeave { get; set; }
+    [Parameter] public EventCallback OnCopyLink { get; set; }
+}

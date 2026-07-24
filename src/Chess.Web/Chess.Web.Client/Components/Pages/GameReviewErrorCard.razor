@@ -1,0 +1,13 @@
+<div class="gr-card">
+    <div class="gr-icon-circle gr-icon-circle--error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <p class="gr-error-msg">@ErrorMessage</p>
+    <a href="/history" class="btn btn-secondary" style="width:100%;">
+        <i class="bi bi-arrow-right"></i> بازگشت
+    </a>
+</div>
+
+@code {
+    [Parameter] public string ErrorMessage { get; set; } = "";
+}

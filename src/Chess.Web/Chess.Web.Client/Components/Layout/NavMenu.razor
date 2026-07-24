@@ -1,0 +1,130 @@
+@inject IJSRuntime JS
+@using System.Net.Http.Json
+
+<nav class="nav-menu">
+    <div class="nav-header">
+        <div class="nav-header-inner">
+            <div class="nav-brand">
+                <a href="/" class="nav-logo">
+                    <span class="nav-logo-icon">♚</span>
+                    <span class="nav-logo-text">شطرنج آنلاین</span>
+                </a>
+            </div>
+            <div class="nav-header-right">
+                <button class="nav-theme-toggle" @onclick="ToggleTheme" aria-label="تغییر تم">
+                    <span class="theme-icon @(isDark ? "theme-icon--dark" : "")">
+                        @if (isDark)
+                        {
+                            <i class="bi bi-sun"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-moon"></i>
+                        }
+                    </span>
+                </button>
+                @if (isLoggedIn)
+                {
+                    <div class="nav-user">
+                        <div class="nav-avatar">@username[0]</div>
+                        <div class="nav-user-menu">
+                            <div class="nav-user-name">@username</div>
+                            <div class="nav-user-links">
+                                <NavLink href="/profile" class="nav-dropdown-link">
+                                    <i class="bi bi-person"></i> پروفایل
+                                </NavLink>
+                                <NavLink href="/settings" class="nav-dropdown-link">
+                                    <i class="bi bi-gear"></i> تنظیمات
+                                </NavLink>
+                                <div class="nav-dropdown-divider"></div>
+                                <a href="/auth/logout" class="nav-dropdown-link nav-dropdown-logout">
+                                    <i class="bi bi-box-arrow-right"></i> خروج
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <NavLink href="/auth/login" class="nav-auth-link">ورود</NavLink>
+                    <NavLink href="/auth/register" class="nav-auth-link nav-auth-link--primary">ثبت‌نام</NavLink>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-links-row">
+        <div class="nav-links-inner">
+            <div class="nav-links-group nav-links-group--primary">
+                <NavLink href="/home" class="nav-link" Match="NavLinkMatch.All">خانه</NavLink>
+                <NavLink href="/play/queue" class="nav-link">بازی</NavLink>
+                <NavLink href="/play/active" class="nav-link">بازی‌های فعال</NavLink>
+                <NavLink href="/rooms" class="nav-link">اتاق‌ها</NavLink>
+                <NavLink href="/history" class="nav-link">تاریخچه</NavLink>
+            </div>
+            <div class="nav-links-divider"></div>
+            <div class="nav-links-group nav-links-group--secondary">
+                <NavLink href="/about" class="nav-link nav-link--muted">درباره ما</NavLink>
+                <NavLink href="/faq" class="nav-link nav-link--muted">سؤالات متداول</NavLink>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private bool isDark = false;
+    private bool isLoggedIn;
+    private string username = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("themeToggle.getEffectiveTheme");
+            isDark = theme == "dark";
+            await JS.InvokeVoidAsync("themeToggle.applyTheme", theme);
+
+            await CheckAuthState();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckAuthState()
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(NavigationManager.BaseUri);
+            var response = await http.GetAsync("/api/users/me");
+            if (response.IsSuccessStatusCode)
+            {
+                isLoggedIn = true;
+                var user = await response.Content.ReadFromJsonAsync<UserInfo>();
+                username = user?.Username ?? "";
+            }
+            else
+            {
+                isLoggedIn = false;
+                username = "";
+            }
+        }
+        catch
+        {
+            isLoggedIn = false;
+            username = "";
+        }
+    }
+
+    private class UserInfo
+    {
+        public string Username { get; set; } = "";
+    }
+
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private async Task ToggleTheme()
+    {
+        var newTheme = await JS.InvokeAsync<string>("themeToggle.toggle");
+        isDark = newTheme == "dark";
+    }
+}

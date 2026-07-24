@@ -1,0 +1,75 @@
+/* PresetChat scoped styles */
+
+.preset-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Conversation ─── */
+.preset-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--fill);
+  max-height: 100px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.preset-conversation::-webkit-scrollbar { display: none; }
+
+.preset-line {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--label-tertiary);
+}
+.preset-line--me { justify-content: flex-end; }
+.preset-sender { font-weight: 600; color: var(--label-secondary); font-size: 10px; }
+.preset-text { font-weight: 500; }
+
+/* ─── Buttons ─── */
+.preset-messages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+::deep .preset-btn {
+  padding: 5px 10px;
+  border-radius: 9999px;
+  background: var(--background-secondary);
+  border: .5px solid var(--separator);
+  color: var(--label-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: auto;
+  white-space: nowrap;
+}
+::deep .preset-btn:hover:not(:disabled) {
+  background: var(--fill);
+  color: var(--label);
+  border-color: var(--color-blue);
+}
+::deep .preset-btn:active:not(:disabled) { transform: scale(0.95); }
+::deep .preset-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+@media (prefers-color-scheme: dark) {
+  ::deep .preset-btn { background: #2c313a; border-color: #3a3f47; }
+  ::deep .preset-btn:hover:not(:disabled) { background: #3a3f47; }
+}
+
+/* ─── Cooldown ─── */
+.preset-cooldown {
+  font-size: 10px;
+  color: var(--label-tertiary);
+  text-align: center;
+}

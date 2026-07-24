@@ -1,0 +1,61 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>شطرنج آنلاین — بازی PvP منصفانه</title>
+    <base href="/" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2C5F8A" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="stylesheet" href="/fonts/Peyda/01-Standard/WebFonts/fontiran.css" />
+    <link rel="stylesheet" href="/fonts/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/staff.css" />
+    <link rel="stylesheet" href="/themes/dark.css" />
+    <link rel="stylesheet" href="_content/Chess.Web.Client.styles.css" />
+    <link rel="stylesheet" href="Chess.Web.styles.css" />
+    <link rel="preload" href="/fonts/Peyda/01-Standard/WebFonts/fonts/woff2/PeydaWeb-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Peyda/01-Standard/WebFonts/fonts/woff2/PeydaWeb-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Peyda/01-Standard/WebFonts/fonts/woff2/PeydaWeb-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <HeadOutlet @rendermode="InteractiveWebAssembly" />
+</head>
+<body>
+    <div id="app-loading">
+        <div class="app-loading-spinner"></div>
+        <span class="app-loading-text">شطرنج آنلاین</span>
+    </div>
+    <Chess.Web.Client.Components.Routes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: false))" />
+    <script src="/js/theme-toggle.js"></script>
+    <script>themeToggle.init();</script>
+    <script src="/js/audio.js"></script>
+    <script src="/js/register-sw.js"></script>
+    <script src="_framework/blazor.web.js"></script>
+    <script>
+        // Remove loading indicator when Blazor app renders
+        function watchForApp() {
+            var observer = new MutationObserver(function () {
+                var app = document.querySelector('.main-layout') || document.querySelector('.main-content');
+                if (app) {
+                    var el = document.getElementById('app-loading');
+                    if (el) {
+                        el.classList.add('fade-out');
+                        setTimeout(function () { el.remove(); }, 300);
+                    }
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', watchForApp);
+        } else {
+            watchForApp();
+        }
+    </script>
+</body>
+</html>

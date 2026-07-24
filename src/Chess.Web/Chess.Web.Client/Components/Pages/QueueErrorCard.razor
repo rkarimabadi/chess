@@ -1,0 +1,15 @@
+<div class="qsc-card qsc-card--error">
+    <div class="qsc-icon-circle qsc-icon-circle--error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <h3>خطا در اتصال</h3>
+    <p class="qsc-error-msg">@ErrorMessage</p>
+    <button class="btn btn-primary" style="width:100%;" @onclick="OnRetry">
+        <i class="bi bi-arrow-clockwise"></i> تلاش مجدد
+    </button>
+</div>
+
+@code {
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public EventCallback OnRetry { get; set; }
+}

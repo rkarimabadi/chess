@@ -1,0 +1,286 @@
+# ============================
+# AI Agents / Machine Learning
+# ============================
+
+# Python / ML model files
+*.pyc
+__pycache__/
+*.pkl
+*.joblib
+*.h5
+*.pb
+*.tflite
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.gguf
+*.ggml
+
+# AI Agent specific
+agent_memory/
+agent_checkpoints/
+conversation_history/
+vector_store/
+embeddings/
+chroma_db/
+pinecone_backup/
+weaviate_data/
+milvus_data/
+qdrant_data/
+
+# LangChain / LangGraph
+langchain_cache/
+langgraph_state/
+*.lc_cache
+
+# Training data (large files)
+*.csv
+*.tsv
+*.parquet
+*.arrow
+*.jsonl
+training_data/
+test_data/
+datasets/
+
+# Model outputs
+outputs/
+predictions/
+generated_artifacts/
+
+# ============================
+# Visual Studio
+# ============================
+
+# Visual Studio specific files
+*.vs/
+.vs/
+*.vssettings2
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# ============================
+# .NET / C# Development
+# ============================
+
+# Build outputs
+bin/
+obj/
+out/
+dist/
+publish/
+
+# NuGet packages
+packages/
+*.nupkg
+*.snupkg
+nuget.exe
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+*.coveragejson
+*.codecoverage
+
+# Dotnet tools
+.dotnet/
+global.json
+*.dotnet
+
+# ============================
+# Build tools & CI/CD
+# ============================
+
+# Build artifacts
+*.dll
+*.exe
+*.pdb
+*.dylib
+*.so
+*.a
+*.lib
+*.exp
+*.ilk
+*.log
+*.tmp
+
+# Coverage reports
+coverage/
+coverage.cobertura.xml
+*.opencover.xml
+
+# Benchmark results
+BenchmarkDotNet.Artifacts/
+
+# ============================
+# Dependency management
+# ============================
+
+# NuGet
+*.nuget.props
+*.nuget.targets
+*.packages.config.lock.json
+project.lock.json
+packages.lock.json
+
+# Node (for frontend if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ============================
+# Environment & Config
+# ============================
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Secrets / sensitive data
+*.secret
+*.key
+*.pem
+*.crt
+*.pfx
+*.p12
+*.cer
+secrets.json
+appsettings.*.json
+!appsettings.Development.json
+!appsettings.Production.json
+!appsettings.json
+
+# ============================
+# Logs & Temporary files
+# ============================
+
+# Logs
+logs/
+*.log
+log.txt
+*.trace
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.swp
+*.swo
+*~
+Thumbs.db
+.DS_Store
+
+# ============================
+# IDE & Editor specific
+# ============================
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio Code
+*.code-snippets
+*.vsix
+
+# ============================
+# Documentation & Reports
+# ============================
+
+# Generated docs
+docs/_build/
+docs/api/
+*.chm
+*.epub
+*.mobi
+
+# ============================
+# Docker & Containers
+# ============================
+
+.dockerignore
+Dockerfile*
+!Dockerfile
+!Dockerfile.*
+docker-compose*.yml
+!docker-compose.override.yml
+
+# ============================
+# Project specific
+# ============================
+
+# If using Entity Framework
+/Migrations/
+*.efcore
+
+# Azure Functions
+local.settings.json
+*.azurefunctions
+
+# Windows
+*.exe
+*.msi
+*.msm
+*.msp
+
+# ============================
+# Health and Safety (AI safety)
+# ============================
+
+# Safety checkpoints
+safety_checkpoints/
+guardrails_cache/
+
+# Output validation
+validation_reports/
+hallucination_detection/
+
+# ============================
+# Custom AI Agent rules
+# ============================
+
+# If using specific AI frameworks
+/openai/
+/anthropic/
+/mistral/
+/cohere/
+/huggingface/
+
+# Vector databases
+/weaviate/
+/pinecone/
+/milvus/
+/qdrant/
+
+# Agent frameworks
+/autogen/
+/semantic-kernel/
+/langchain/
+/llamaindex/
+
+# ============================
+# Keep only what's needed
+# ============================
+
+# Allow these to be tracked even if ignored above
+!*.example
+!*.template
+!*.sample
+!.env.example
+
+# Allow specific config files
+!appsettings.json
+!appsettings.Development.json
+!appsettings.Production.json

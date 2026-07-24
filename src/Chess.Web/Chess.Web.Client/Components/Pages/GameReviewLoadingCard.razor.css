@@ -1,0 +1,26 @@
+.gr-card {
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--space-6) var(--space-5);
+    min-width: 280px; max-width: 520px; width: 100%;
+    box-shadow: var(--shadow-md);
+    animation: grFadeIn 0.3s ease-out;
+}
+@keyframes grFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+.gr-spinner {
+    width: 40px; height: 40px;
+    margin: 0 auto var(--space-4);
+    border: 3px solid var(--fill);
+    border-top-color: var(--color-blue);
+    border-radius: 50%;
+    animation: grSpin 0.8s linear infinite;
+}
+@keyframes grSpin { to { transform: rotate(360deg); } }
+.gr-card p { color: var(--label-secondary); font-size: var(--text-subhead); margin: 0; }
+@media (max-width: 768px) {
+  .gr-card { min-width: 0; max-width: 100%; padding: var(--space-5) var(--space-4); }
+}

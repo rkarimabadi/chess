@@ -1,0 +1,18 @@
+/* CreateRoom scoped styles */
+.create-room-page {
+    display: flex; justify-content: center; align-items: center;
+    min-height: 60vh; padding: var(--space-4);
+}
+.rated-toggle {
+    display: flex;
+    flex-direction: row;
+}
+.toggle {
+    font-size: var(--text-body);
+    font-weight: 500;
+}
+.rated-toggle-desc {
+    font-size: var(--text-caption1);
+    color: var(--label-secondary);
+    margin-right: 1rem;
+}

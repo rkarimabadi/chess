@@ -1,0 +1,106 @@
+@inject NavigationManager Nav
+@using Chess.Application.DTOs
+@using System.Net.Http.Json
+
+<div class="staff-audit-log">
+    @if (loading)
+    {
+        <div class="staff-loading-inline">
+            <div class="queue-spinner" style="width:24px;height:24px;"></div>
+        </div>
+    }
+    else if (logs.Count == 0)
+    {
+        <div class="staff-empty">گزارش تغییراتی یافت نشد.</div>
+    }
+    else
+    {
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>عملگر</th>
+                    <th>عملیات</th>
+                    <th>هدف</th>
+                    <th>دلیل</th>
+                    <th>تاریخ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in logs)
+                {
+                    <tr>
+                        <td><span class="staff-user-link">@log.ActorUsername</span></td>
+                        <td><span class="staff-badge staff-badge-info">@ActionLabel(log.ActionType)</span></td>
+                        <td>@log.TargetType #@log.TargetId.ToString()[..8]</td>
+                        <td>@log.Reason</td>
+                        <td class="staff-date">@log.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="staff-pagination">
+            <button class="btn btn-secondary" disabled="@(currentPage <= 1)" @onclick="PrevPage">قبلی</button>
+            <span class="staff-page-info">صفحة @currentPage</span>
+            <button class="btn btn-secondary" disabled="@(logs.Count < 50)" @onclick="NextPage">بعدی</button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<AuditLogDto> logs = new();
+    private bool loading = true;
+    private int currentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Nav.BaseUri);
+            logs = await http.GetFromJsonAsync<List<AuditLogDto>>($"/api/staff/audit?page={currentPage}") ?? new();
+        }
+        catch
+        {
+            logs = new();
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadLogs();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        currentPage++;
+        await LoadLogs();
+    }
+
+    private static string ActionLabel(string action) => action switch
+    {
+        "Ban" => "مسدودسازی",
+        "Unban" => "رفع مسدودیت",
+        "Mute" => "بی‌صداسازی",
+        "Unmute" => "رفع بی‌صدا",
+        "Warn" => "اخطار",
+        "RoleChange" => "تغییر نقش",
+        "ReportResolve" => "حل گزارش",
+        _ => action
+    };
+}
